@@ -1,0 +1,99 @@
+---
+system_name_servers:
+  - 1.1.1.1
+physical_interfaces:
+  - fe-0/0/1
+  - fe-0/0/2
+pppoe_physical_interface: pt-1/0/0
+vlans:
+  - name: services
+    id: 100
+    l3_interface: irb.100
+    cidr: 192.168.100.0/24
+  - name: security
+    id: 101
+    l3_interface: irb.101
+    cidr: 192.168.101.0/24
+  - name: dmz
+    id: 102
+    l3_interface: irb.102
+    cidr: 192.168.102.0/24
+  - name: clients
+    id: 103
+    l3_interface: irb.103
+    cidr: 192.168.103.0/24
+  - name: vms
+    id: 300
+    l3_interface: irb.300
+    cidr: 10.10.0.0/16
+  - name: hypervisors
+    id: 350
+    l3_interface: irb.350
+    cidr: 172.18.0.0/16
+subnets:
+# Services
+  - cidr: 192.168.100.0/24
+    dhcp_start: 192.168.100.10
+    dhcp_end: 192.168.100.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 192.168.100.1
+    lease_time: 3600
+# Security
+  - cidr: 192.168.101.0/24
+    dhcp_start: 192.168.101.10
+    dhcp_end: 192.168.101.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 192.168.101.1
+    lease_time: 3600
+# DMZ
+  - cidr: 192.168.102.0/24
+    dhcp_start: 192.168.102.10
+    dhcp_end: 192.168.102.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 192.168.102.2
+    lease_time: 3600
+# Clients
+  - cidr: 192.168.103.0/24
+    dhcp_start: 192.168.103.10
+    dhcp_end: 192.168.103.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 192.168.103.1
+    lease_time: 3600
+# VMs
+  - cidr: 10.10.0.0/16
+    dhcp_start: 10.10.0.10
+    dhcp_end: 10.10.255.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 10.10.0.1
+    lease_time: 3600
+# Hypervisors
+  - cidr: 172.18.0.0/16
+    dhcp_start: 172.18.0.10
+    dhcp_end: 172.18.255.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 172.18.0.1
+    lease_time: 3600

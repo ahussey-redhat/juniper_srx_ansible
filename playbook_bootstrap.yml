@@ -1,0 +1,23 @@
+---
+- name: Bootstrap a JunOS network device
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    passwd: "{{ junos_initial_password }}"
+  tasks:
+    - name: Retrieve current configuration to allow rollback
+      juniper.device.config:
+        retrieve: committed
+        dest_dir: /tmp
+        format: xml
+
+    - name: Create config files
+      ansible.builtin.template:
+        src: configs/bootstrap.j2
+        dest: "configs/{{ inventory_hostname }}_bootstrap.set"
+
+    - name: Set bootstrap configuration
+      juniper.device.config:
+        load: set
+        src: "configs/candidate/{{ inventory_hostname }}_bootstrap.set"

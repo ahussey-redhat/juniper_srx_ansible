@@ -1,0 +1,6 @@
+---
+#ansible_connection: juniper.device.pyez
+ansible_connection: local
+mode: serial
+user: root
+pppoe_username: alexander.hussey@internode.on.net

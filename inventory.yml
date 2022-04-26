@@ -1,0 +1,11 @@
+---
+all:
+  children:
+    srx:
+      hosts:
+        hussfw01.hussdogg.com:
+        hussfw02.hussdogg.com:
+    switches:
+      hosts:
+        husssw01.hussdogg.com:
+        husssw02.hussdogg.com:
