@@ -23,8 +23,8 @@ set interfaces interface-range interfaces-trusted unit 0 family ethernet-switchi
 {# configure services #}
 delete system services web-management http interface vlan.0
 delete system services web-management https interface vlan.0
-set system services web-management http interface vlan.100
-set system services web-management https interface vlan.100
+set system services web-management http interface vlan.{{ webinterface_vlan }}
+set system services web-management https interface vlan.{{ webinterface_vlan }}
 set system services web-management https system-generated-certificate
 
 {# configure DHCP for each subnet #}

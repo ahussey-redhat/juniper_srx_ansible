@@ -5,6 +5,7 @@ physical_interfaces:
   - fe-0/0/1
   - fe-0/0/2
 pppoe_physical_interface: pt-1/0/0
+webinterface_vlan: 100
 vlans:
   - name: services
     id: 100
