@@ -9,7 +9,7 @@
     - name: Retrieve current configuration to allow rollback
       juniper.device.config:
         retrieve: committed
-        dest_dir: /tmp
+        dest_dir: configs/backups
         format: xml
 
     - name: Create config files

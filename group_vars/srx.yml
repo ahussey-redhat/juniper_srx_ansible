@@ -2,8 +2,8 @@
 system_name_servers:
   - 1.1.1.1
 physical_interfaces:
-  - fe-0/0/1
-  - fe-0/0/2
+  - ge-0/0/2
+  - ge-0/0/3
 pppoe_physical_interface: pt-1/0/0
 webinterface_vlan: 100
 vlans:

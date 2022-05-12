@@ -9,13 +9,13 @@
     - name: Retrieve current configuration to allow rollback
       juniper.device.config:
         retrieve: committed
-        dest_dir: /tmp
+        dest_dir: configs/backups
         format: xml
 
     - name: Create config files
       ansible.builtin.template:
         src: configs/bootstrap.j2
-        dest: "configs/{{ inventory_hostname }}_bootstrap.set"
+        dest: "configs/candidate/{{ inventory_hostname }}_bootstrap.set"
 
     - name: Set bootstrap configuration
       juniper.device.config:

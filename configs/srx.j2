@@ -15,7 +15,7 @@ set interfaces irb unit {{ vlan.id }} family inet address {{ vlan.cidr }}
 
 {# configure physical interfaces #}
 {% for interface in physical_interfaces %}
-{# set interfaces {{ interface }} unit 0 family ethernet-switching interface-mode trunk #}
+set interfaces {{ interface }} unit 0 family ethernet-switching interface-mode trunk
 set interfaces interface-range interfaces-trusted member {{ interface }}
 {% endfor %}
 set interfaces interface-range interfaces-trusted unit 0 family ethernet-switching interface-mode trunk
