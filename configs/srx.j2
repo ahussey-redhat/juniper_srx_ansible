@@ -1,6 +1,5 @@
 {# configure global settings #}
 set system host-name {{ inventory_hostname }}
-delete system name-server
 {% for name_server in system_name_servers %}
 set system name-server {{ name_server }}
 {% endfor %}
@@ -21,8 +20,6 @@ set interfaces interface-range interfaces-trusted member {{ interface }}
 set interfaces interface-range interfaces-trusted unit 0 family ethernet-switching interface-mode trunk
 
 {# configure services #}
-delete system services web-management http interface vlan.0
-delete system services web-management https interface vlan.0
 set system services web-management http interface vlan.{{ webinterface_vlan }}
 set system services web-management https interface vlan.{{ webinterface_vlan }}
 set system services web-management https system-generated-certificate

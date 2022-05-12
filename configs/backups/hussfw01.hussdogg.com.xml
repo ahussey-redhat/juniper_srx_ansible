@@ -1,8 +1,0 @@
-<configuration commit-seconds="1652388445" commit-localtime="2022-05-12 20:47:25 UTC" commit-user="root">
-  <version>15.1X49-D70.3</version>
-  <system>
-    <root-authentication>
-      <encrypted-password>$1$sVdCvodx$5vGBMfg.ncCEOEmYgWvlH1</encrypted-password>
-    </root-authentication>
-  </system>
-</configuration>
