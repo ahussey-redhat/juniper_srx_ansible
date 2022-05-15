@@ -5,19 +5,20 @@ set system name-server {{ name_server }}
 {% endfor %}
 set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
 
-{# configure VLANS #}
+{# configure vlans #}
 {% for vlan in vlans %}
-set vlans vlan-{{ vlan.name }} vlan-id {{ vlan.id }}
-set vlans vlan-{{ vlan.name }} l3-interface {{ vlan.l3_interface }}
+set vlans {{ vlan.tag }} vlan-id {{ vlan.id }}
 set interfaces irb unit {{ vlan.id }} family inet address {{ vlan.cidr }}
+set vlans {{ vlan.tag }} l3-interface {{ vlan.l3_interface }}
 {% endfor %}
 
 {# configure physical interfaces #}
 {% for interface in physical_interfaces %}
 set interfaces {{ interface }} unit 0 family ethernet-switching interface-mode trunk
-set interfaces interface-range interfaces-trusted member {{ interface }}
+{% for vlan in vlans %}
+set interfaces {{ interface }} unit 0 family ethernet-switching vlan members {{ vlan.tag }}
 {% endfor %}
-set interfaces interface-range interfaces-trusted unit 0 family ethernet-switching interface-mode trunk
+{% endfor %}
 
 {# configure services #}
 set system services web-management http interface vlan.{{ webinterface_vlan }}
@@ -37,6 +38,7 @@ set system services dhcp pool {{ subnet.cidr }} default-lease-time {{ subnet.lea
 {% endfor %}
 
 {# configure WAN #}
+{% if pppoe_interface is defined %}
 set interfaces {{ pppoe_interface|default('pp0') }} unit 0
 set interfaces {{ pppoe_interface|default('pp0') }} unit 0 ppp-options pap access-profile ppp-profile
 set interfaces {{ pppoe_interface|default('pp0') }} unit 0 ppp-options pap local-password {{ pppoe_password | password_hash('md5') }}
@@ -48,4 +50,5 @@ set interfaces {{ pppoe_interface|default('pp0') }} unit 0 pppoe-options client
 set interfaces {{ pppoe_interface|default('pp0') }} unit 0 pppoe-options idle-timeout 0
 set interfaces {{ pppoe_interface|default('pp0') }} unit 0 family inet negotiate-address
 set interfaces {{ pppoe_interface|default('pp0') }} unit 0 family inet mtu 1492
+{% endif %}
 

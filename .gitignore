@@ -1,2 +1,2 @@
-configs/candidate/
-configs/backups/
+configs/candidate/*
+configs/backups/*

@@ -10,7 +10,7 @@
       juniper.device.config:
         retrieve: committed
         dest_dir: configs/backups
-        format: xml
+        format: set
 
     - name: Create config files
       ansible.builtin.template:
