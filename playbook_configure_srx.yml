@@ -3,8 +3,6 @@
   hosts: srx
   become: true
   gather_facts: false
-  vars:
-    passwd: "{{ junos_password }}"
   tasks:
     - name: Retrieve current configuration to allow rollback
       juniper.device.config:
@@ -14,16 +12,10 @@
 
     - name: Create config files
       ansible.builtin.template:
-        src: configs/srx.j2
+        src: templates/srx.j2
         dest: "configs/candidate/{{ inventory_hostname }}.set"
 
     - name: Configure host
       juniper.device.config:
         load: set
         src: "configs/candidate/{{ inventory_hostname }}.set"
-
-    - name: Configure clustering
-      juniper.device.srx_cluster:
-        cluster_id: 1
-        enable: yes
-        node_id: "{{ node_id }}"

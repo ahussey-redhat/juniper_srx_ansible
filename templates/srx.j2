@@ -1,0 +1,130 @@
+{# configure global settings #}
+set system host-name {{ inventory_hostname }}
+{% for name_server in system_name_servers %}
+set system name-server {{ name_server }}
+{% endfor %}
+set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
+
+{# configure physical interfaces #}
+{% for interface in physical_interfaces %}
+set interfaces {{ interface.if }} vlan-tagging
+set interfaces {{ interface.if }} unit 0 family ethernet-switching interface-mode trunk
+{% endfor %}
+
+{# configure services #}
+set system services web-management http interface irb.{{ webinterface_vlan }}
+set system services web-management https interface irb.{{ webinterface_vlan }}
+set system services web-management https system-generated-certificate
+
+{# configure LAN security zone #}
+{% for zone in security_zones %}
+{% for protocol in zone.allowed_protocols %}
+set security zones security-zone {{ zone.name }} host-inbound-traffic system-services {{ protocol }}
+{% endfor %}
+{% endfor %}
+
+{# configure DHCP for each subnet #}
+{% for subnet in subnets %}
+set access address-assignment pool {{ subnet.name }} family inet network {{ subnet.cidr }}
+set access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope low {{ subnet.dhcp_start }} 
+set access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope high {{ subnet.dhcp_end }}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes domain-name {{ subnet.domain_name }}
+{% for name_server in subnet.name_servers %}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes name-server {{ name_server }}
+{% endfor %}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.gateway }}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes maximum-lease-time {{ subnet.lease_time }}
+{# configure VLANs for each subnet #}
+set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
+set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.cidr }}
+set vlans {{ subnet.vlan.tag }} l3-interface {{ subnet.vlan.l3_interface }}
+set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
+{% for interface in physical_interfaces %}
+set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface {{ interface.if }}.{{ subnet.vlan.id }}
+set interfaces {{ interface.if }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.tag }}
+{% endfor %}
+set security zones security-zone lan-trust interfaces {{ subnet.vlan.l3_interface }}
+{# configure virtual-routers for each subnet #}
+set routing-instances lan-vr instance-type virtual-router
+set routing-instances lan-vr interface {{ subnet.vlan.l3_interface }}
+
+{% endfor %}
+
+{# configure WAN #}
+{% if dhcp_wan1 is defined %}
+{% for wan_interface in dhcp_wan1 %}
+set interfaces {{ wan_interface.if }} unit 0 family inet dhcp-client
+set interfaces {{ wan_interface.if }} description primary-isp
+set routing-instances primary-vr instance-type virtual-router
+set routing-instances primary-vr interface {{ wan_interface.if }}
+set security zones security-zone primary-untrust interfaces {{ wan_interface.if }} host-inbound-traffic system-services dhcp
+{% endfor %}
+{% endif %}
+
+{% if dhcp_wan2 is defined %}
+{% for wan_interface in dhcp_wan2 %}
+set interfaces {{ wan_interface.if }} unit 0 family inet dhcp-client
+set interfaces {{ wan_interface.if }} description alternate-isp
+set routing-instances alternate-vr instance-type virtual-router
+set routing-instances alternate-vr interface {{ wan_interface.if }}
+set security zones security-zone alternate-untrust interfaces {{ wan_interface.if }} host-inbound-traffic system-services dhcp
+{% endfor %}
+{% endif %}
+
+{% if pppoe_interface is defined %}
+set interfaces {{ pppoe_interface }} unit 0
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap access-profile ppp-profile
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap local-password {{ pppoe_password | password_hash('md5') }}
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap local-name {{ pppoe_username }}
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap passive
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options underlying-interface {{ pppoe_physical_interface }}
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options auto-reconnect 10
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options client
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options idle-timeout 0
+set interfaces {{ pppoe_interface }} unit 0 family inet negotiate-address
+set interfaces {{ pppoe_interface }} unit 0 family inet mtu 1492
+{% endif %}
+
+{# Configure source NAT #}
+set security nat source rule-set to-primary-isp from zone lan-trust
+set security nat source rule-set to-primary-isp to zone primary-untrust
+set security nat source rule-set to-primary-isp rule r1 match source-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp rule r1 match destination-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp rule r1 then source-nat interface
+
+set security nat source rule-set to-alternate-isp from zone lan-trust
+set security nat source rule-set to-alternate-isp to zone alternate-untrust
+set security nat source rule-set to-alternate-isp rule r2 match source-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp rule r2 match destination-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp rule r2 then source-nat interface
+
+
+{# Configure WAN failover #}
+{#
+set routing-options interface-routes rib-group inet isp
+set routing-options static route 0.0.0.0/0 next-table primary-isp.inet.0
+set routing-options rib-groups isp import-rib [ inet.0 primary-isp.inet.0 alternate-isp.inet.0 ]
+
+set services ip-monitoring policy primary-isp match rpm-probe primary-isp
+set services ip-monitoring policy primary-isp then preferred-route routing-instances primary-isp route 0.0.0.0/0 next-hop {{ dhcp_wan1.nh}}
+set services ip-monitoring policy alternate-isp match rpm-probe alternate-isp
+set services ip-monitoring policy alternate-isp then preferred-route routing-instances alternate-isp route 0.0.0.0/0 next-hop {{ dhcp_wan2.nh}}
+
+set services rpm probe primary-isp test google probe-type icmp-ping
+set services rpm probe primary-isp test google target address 8.8.8.8
+set services rpm probe primary-isp test google probe-count 3
+set services rpm probe primary-isp test google probe-interval 5
+set services rpm probe primary-isp test google test-interval 10
+set services rpm probe primary-isp test google thresholds successive-loss 3
+set services rpm probe primary-isp test google thresholds total-loss 3
+set services rpm probe primary-isp test google destination-interface {{ dhcp_wan1.if }}.0
+
+set services rpm probe alternate-isp test google probe-type icmp-ping
+set services rpm probe alternate-isp test google target address 8.8.8.8
+set services rpm probe alternate-isp test google probe-count 3
+set services rpm probe alternate-isp test google probe-interval 5
+set services rpm probe alternate-isp test google test-interval 10
+set services rpm probe alternate-isp test google thresholds successive-loss 3
+set services rpm probe alternate-isp test google thresholds total-loss 3
+set services rpm probe alternate-isp test google destination-interface {{ dhcp_wan2.if }}.0
+#}

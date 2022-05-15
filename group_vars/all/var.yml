@@ -3,4 +3,4 @@
 ansible_connection: local
 mode: serial
 user: root
-pppoe_username: alexander.hussey@internode.on.net
+passwd: "{{ junos_password }}"
