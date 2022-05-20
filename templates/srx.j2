@@ -5,27 +5,37 @@ set system name-server {{ name_server }}
 {% endfor %}
 set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
 
+{# configure redundant ethernet #}
+set chassis cluster reth-count 2
+set chassis cluster redundancy-group 1 node 0 priority 200
+set chassis cluster redundancy-group 1 node 1 priority 100
+set interfaces reth1 redundant-ether-options redundancy-group 1
+set interfaces reth1 redundant-ether-options lacp active
+set interfaces reth1 redundant-ether-options lacp periodic slow
+set interfaces reth1 vlan-tagging
+
 {# configure physical interfaces #}
 {% for interface in physical_interfaces %}
-set interfaces {{ interface.if }} vlan-tagging
-set interfaces {{ interface.if }} unit 0 family ethernet-switching interface-mode trunk
+{# configure redundant ethernet #}
+set interfaces {{ interface.if }} gigether-options redundant-parent reth1
 {% endfor %}
-
-{# configure services #}
-set system services web-management http interface irb.{{ webinterface_vlan }}
-set system services web-management https interface irb.{{ webinterface_vlan }}
-set system services web-management https system-generated-certificate
 
 {# configure LAN security zone #}
 {% for zone in security_zones %}
 {% for protocol in zone.allowed_protocols %}
 set security zones security-zone {{ zone.name }} host-inbound-traffic system-services {{ protocol }}
 {% endfor %}
+{% for subnet in subnets %}
+set security zones security-zone {{ zone.name }} interfaces reth1.{{ subnet.vlan.id }}
+set interfaces reth1 unit {{ subnet.vlan.id }} family inet address {{ subnet.gateway }}/{{ subnet.mask }}
+set interfaces reth1 unit {{ subnet.vlan.id }} vlan-id {{ subnet.vlan.id }}
+set interfaces reth1 unit {{ subnet.vlan.id }} description {{ subnet.vlan.tag }}
+{% endfor %}
 {% endfor %}
 
 {# configure DHCP for each subnet #}
 {% for subnet in subnets %}
-set access address-assignment pool {{ subnet.name }} family inet network {{ subnet.cidr }}
+set access address-assignment pool {{ subnet.name }} family inet network {{ subnet.gateway }}/{{ subnet.mask }}
 set access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope low {{ subnet.dhcp_start }} 
 set access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope high {{ subnet.dhcp_end }}
 set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes domain-name {{ subnet.domain_name }}
@@ -35,39 +45,41 @@ set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes
 set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.gateway }}
 set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes maximum-lease-time {{ subnet.lease_time }}
 {# configure VLANs for each subnet #}
-set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
-set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.cidr }}
-set vlans {{ subnet.vlan.tag }} l3-interface {{ subnet.vlan.l3_interface }}
-set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
-{% for interface in physical_interfaces %}
-set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface {{ interface.if }}.{{ subnet.vlan.id }}
-set interfaces {{ interface.if }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.tag }}
-{% endfor %}
-set security zones security-zone lan-trust interfaces {{ subnet.vlan.l3_interface }}
+set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface reth1.{{ subnet.vlan.id }}
 {# configure virtual-routers for each subnet #}
 set routing-instances lan-vr instance-type virtual-router
-set routing-instances lan-vr interface {{ subnet.vlan.l3_interface }}
+set routing-instances lan-vr interface reth1.{{ subnet.vlan.id }}
 
 {% endfor %}
+
+{# configure services #}
+set system services web-management http interface {{ webinterface }}
+set system services web-management https interface {{ webinterface }}
+set system services web-management https system-generated-certificate
 
 {# configure WAN #}
 {% if dhcp_wan1 is defined %}
 {% for wan_interface in dhcp_wan1 %}
-set interfaces {{ wan_interface.if }} unit 0 family inet dhcp-client
-set interfaces {{ wan_interface.if }} description primary-isp
-set routing-instances primary-vr instance-type virtual-router
-set routing-instances primary-vr interface {{ wan_interface.if }}
-set security zones security-zone primary-untrust interfaces {{ wan_interface.if }} host-inbound-traffic system-services dhcp
+set interfaces {{ wan_interface }} unit 0 family inet dhcp-client
+set interfaces {{ wan_interface }} description primary-isp
+set routing-instances primary-vr{{ loop.index }} instance-type virtual-router
+set routing-instances primary-vr{{ loop.index }} interface {{ wan_interface }}
+set routing-instances primary-vr{{ loop.index }} routing-options interface-routes rib-group inet isp
+set routing-instances primary-vr{{ loop.index }} routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh }}
+set security zones security-zone primary-untrust{{ loop.index }} interfaces {{ wan_interface }} host-inbound-traffic system-services dhcp
+set security zones security-zone primary-untrust{{ loop.index }} interfaces {{ wan_interface }} host-inbound-traffic system-services ping
 {% endfor %}
 {% endif %}
 
 {% if dhcp_wan2 is defined %}
 {% for wan_interface in dhcp_wan2 %}
-set interfaces {{ wan_interface.if }} unit 0 family inet dhcp-client
-set interfaces {{ wan_interface.if }} description alternate-isp
-set routing-instances alternate-vr instance-type virtual-router
-set routing-instances alternate-vr interface {{ wan_interface.if }}
-set security zones security-zone alternate-untrust interfaces {{ wan_interface.if }} host-inbound-traffic system-services dhcp
+set interfaces {{ wan_interface }} unit 0 family inet dhcp-client
+set interfaces {{ wan_interface }} description alternate-isp
+set routing-instances alternate-vr{{ loop.index }} instance-type virtual-router
+set routing-instances alternate-vr{{ loop.index }} interface {{ wan_interface }}
+set routing-instances alternate-vr{{ loop.index }} routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh }}
+set security zones security-zone alternate-untrust{{ loop.index }} interfaces {{ wan_interface }} host-inbound-traffic system-services dhcp
+set security zones security-zone alternate-untrust{{ loop.index }} interfaces {{ wan_interface }} host-inbound-traffic system-services ping
 {% endfor %}
 {% endif %}
 
@@ -85,46 +97,70 @@ set interfaces {{ pppoe_interface }} unit 0 family inet negotiate-address
 set interfaces {{ pppoe_interface }} unit 0 family inet mtu 1492
 {% endif %}
 
-{# Configure source NAT #}
-set security nat source rule-set to-primary-isp from zone lan-trust
-set security nat source rule-set to-primary-isp to zone primary-untrust
-set security nat source rule-set to-primary-isp rule r1 match source-address 0.0.0.0/0
-set security nat source rule-set to-primary-isp rule r1 match destination-address 0.0.0.0/0
-set security nat source rule-set to-primary-isp rule r1 then source-nat interface
-
-set security nat source rule-set to-alternate-isp from zone lan-trust
-set security nat source rule-set to-alternate-isp to zone alternate-untrust
-set security nat source rule-set to-alternate-isp rule r2 match source-address 0.0.0.0/0
-set security nat source rule-set to-alternate-isp rule r2 match destination-address 0.0.0.0/0
-set security nat source rule-set to-alternate-isp rule r2 then source-nat interface
-
-
 {# Configure WAN failover #}
-{#
-set routing-options interface-routes rib-group inet isp
-set routing-options static route 0.0.0.0/0 next-table primary-isp.inet.0
-set routing-options rib-groups isp import-rib [ inet.0 primary-isp.inet.0 alternate-isp.inet.0 ]
+{% if dhcp_wan2 is defined %}
+set routing-options rib-groups isp import-rib primary-vr1.inet.0
+set routing-options rib-groups isp import-rib primary-vr2.inet.0
+set routing-options rib-groups isp import-rib alternate-vr1.inet.0
+set routing-options rib-groups isp import-rib alternate-vr2.inet.0
 
-set services ip-monitoring policy primary-isp match rpm-probe primary-isp
-set services ip-monitoring policy primary-isp then preferred-route routing-instances primary-isp route 0.0.0.0/0 next-hop {{ dhcp_wan1.nh}}
-set services ip-monitoring policy alternate-isp match rpm-probe alternate-isp
-set services ip-monitoring policy alternate-isp then preferred-route routing-instances alternate-isp route 0.0.0.0/0 next-hop {{ dhcp_wan2.nh}}
 
-set services rpm probe primary-isp test google probe-type icmp-ping
-set services rpm probe primary-isp test google target address 8.8.8.8
-set services rpm probe primary-isp test google probe-count 3
-set services rpm probe primary-isp test google probe-interval 5
-set services rpm probe primary-isp test google test-interval 10
-set services rpm probe primary-isp test google thresholds successive-loss 3
-set services rpm probe primary-isp test google thresholds total-loss 3
-set services rpm probe primary-isp test google destination-interface {{ dhcp_wan1.if }}.0
+{% for wan_interface in dhcp_wan1 %}
+{# Configure source NAT #}
+set security nat source rule-set to-primary-isp{{ loop.index }} from zone lan-trust
+set security nat source rule-set to-primary-isp{{ loop.index }} to zone primary-untrust{{ loop.index }} 
+set security nat source rule-set to-primary-isp{{ loop.index }} rule p{{ loop.index }} match source-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp{{ loop.index }} rule p{{ loop.index }} match destination-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp{{ loop.index }} rule p{{ loop.index }} then source-nat interface
 
-set services rpm probe alternate-isp test google probe-type icmp-ping
-set services rpm probe alternate-isp test google target address 8.8.8.8
-set services rpm probe alternate-isp test google probe-count 3
-set services rpm probe alternate-isp test google probe-interval 5
-set services rpm probe alternate-isp test google test-interval 10
-set services rpm probe alternate-isp test google thresholds successive-loss 3
-set services rpm probe alternate-isp test google thresholds total-loss 3
-set services rpm probe alternate-isp test google destination-interface {{ dhcp_wan2.if }}.0
-#}
+{# Configure route monitoring #}
+set services rpm probe primary-isp{{ loop.index }} test google probe-type icmp-ping
+set services rpm probe primary-isp{{ loop.index }} test google target address 8.8.8.8
+set services rpm probe primary-isp{{ loop.index }} test google probe-count 5
+set services rpm probe primary-isp{{ loop.index }} test google probe-interval 1
+set services rpm probe primary-isp{{ loop.index }} test google test-interval 30
+set services rpm probe primary-isp{{ loop.index }} test google thresholds successive-loss 5
+set services rpm probe primary-isp{{ loop.index }} test google thresholds total-loss 5
+set services rpm probe primary-isp{{ loop.index }} test google next-hop {{ dhcp_wan1_nh }}
+set services rpm probe primary-isp{{ loop.index }} test google destination-interface {{ wan_interface }}
+
+set services ip-monitoring policy primary-isp{{ loop.index }} match rpm-probe primary-isp{{ loop.index }}
+set services ip-monitoring policy primary-isp{{ loop.index }} then preferred-route routing-instances primary-vr{{ loop.index }} route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh}}
+{% endfor %}
+
+{% for wan_interface in dhcp_wan2 %}
+{# Configure source NAT #}
+set security nat source rule-set to-alternate-isp{{ loop.index }} from zone lan-trust
+set security nat source rule-set to-alternate-isp{{ loop.index }} to zone alternate-untrust{{ loop.index }} 
+set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} match source-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} match destination-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} then source-nat interface
+
+{# Configure route monitoring #}
+set services rpm probe alternate-isp{{ loop.index }} test google probe-type icmp-ping
+set services rpm probe alternate-isp{{ loop.index }} test google target address 8.8.8.8
+set services rpm probe alternate-isp{{ loop.index }} test google probe-count 10
+set services rpm probe alternate-isp{{ loop.index }} test google probe-interval 5
+set services rpm probe alternate-isp{{ loop.index }} test google test-interval 60
+set services rpm probe alternate-isp{{ loop.index }} test google thresholds successive-loss 10
+set services rpm probe alternate-isp{{ loop.index }} test google thresholds total-loss 10
+set services rpm probe alternate-isp{{ loop.index }} test google next-hop {{ dhcp_wan2_nh }}
+set services rpm probe alternate-isp{{ loop.index }} test google destination-interface {{ wan_interface }}
+
+set services ip-monitoring policy alternate-isp{{ loop.index }} match rpm-probe alternate-isp{{ loop.index }}
+set services ip-monitoring policy alternate-isp{{ loop.index }} then preferred-route routing-instances alternate-vr{{ loop.index }} route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh}}
+{% endfor %}
+
+set policy-options policy-statement isp term t1 from preference 1
+set policy-options policy-statement isp term t1 then reject
+set policy-options policy-statement isp term t2 from instance primary-vr1 preference 10
+set policy-options policy-statement isp term t2 then accept
+set policy-options policy-statement isp term t3 from instance primary-vr2 preference 11
+set policy-options policy-statement isp term t3 then accept
+set policy-options policy-statement isp term t4 from instance alternate-vr1 preference 20
+set policy-options policy-statement isp term t4 then accept
+set policy-options policy-statement isp term t5 from instance alternate-vr2 preference 21
+set policy-options policy-statement isp term t5 then accept
+
+set routing-instances lan-vr routing-options instance-import isp
+{% endif %}

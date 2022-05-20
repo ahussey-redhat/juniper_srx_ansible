@@ -1,5 +1,5 @@
 ---
-- name: Bootstrap a JunOS network device
+- name: Bootstrap a JUNOS network device
   hosts: all
   become: true
   gather_facts: false

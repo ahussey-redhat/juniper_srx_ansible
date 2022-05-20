@@ -1,0 +1,29 @@
+
+
+{# configure DHCP for each subnet #}
+{% for subnet in subnets %}
+set access address-assignment pool {{ subnet.name }} family inet network {{ subnet.network_address }}.1/{{ subnet.mask }}
+set access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope low {{ subnet.dhcp_start }} 
+set access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope high {{ subnet.dhcp_end }}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes domain-name {{ subnet.domain_name }}
+{% for name_server in subnet.name_servers %}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes name-server {{ name_server }}
+{% endfor %}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.gateway }}
+set access address-assignment pool {{ subnet.name }} family inet dhcp-attributes maximum-lease-time {{ subnet.lease_time }}
+{# configure VLANs for each subnet #}
+set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
+set interfaces {{ subnet.vlan.l3_interface }} family inet address  {{ subnet.network_address }}.1/{{ subnet.mask }}
+set vlans {{ subnet.vlan.tag }} l3-interface {{ subnet.vlan.l3_interface }}
+set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
+{% for interface in physical_interfaces %}
+set system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface {{ interface.if }}.{{ subnet.vlan.id }}
+set interfaces {{ interface.if }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.tag }}
+{# set interfaces {{ interface.if }} unit {{ subnet.vlan.id }} family inet address {{ subnet.network_address }}.{{ interface.number }}/{{ subnet.mask }} #}
+{% endfor %}
+set security zones security-zone lan-trust interfaces {{ subnet.vlan.l3_interface }}
+{# configure virtual-routers for each subnet #}
+set routing-instances lan-vr instance-type virtual-router
+set routing-instances lan-vr interface {{ subnet.vlan.l3_interface }}
+
+{% endfor %}
