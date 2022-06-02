@@ -99,11 +99,14 @@ set interfaces {{ pppoe_interface }} unit 0 family inet mtu 1492
 
 {# Configure WAN failover #}
 {% if dhcp_wan2 is defined %}
+delete routing-options rib-groups
 set routing-options rib-groups isp import-rib primary-vr1.inet.0
 set routing-options rib-groups isp import-rib primary-vr2.inet.0
 set routing-options rib-groups isp import-rib alternate-vr1.inet.0
 set routing-options rib-groups isp import-rib alternate-vr2.inet.0
 
+delete security nat source
+delete services rpm probe
 
 {% for wan_interface in dhcp_wan1 %}
 {# Configure source NAT #}
@@ -130,6 +133,7 @@ set services ip-monitoring policy primary-isp{{ loop.index }} then preferred-rou
 
 {% for wan_interface in dhcp_wan2 %}
 {# Configure source NAT #}
+
 set security nat source rule-set to-alternate-isp{{ loop.index }} from zone lan-trust
 set security nat source rule-set to-alternate-isp{{ loop.index }} to zone alternate-untrust{{ loop.index }} 
 set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} match source-address 0.0.0.0/0
@@ -151,16 +155,19 @@ set services ip-monitoring policy alternate-isp{{ loop.index }} match rpm-probe 
 set services ip-monitoring policy alternate-isp{{ loop.index }} then preferred-route routing-instances alternate-vr{{ loop.index }} route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh}}
 {% endfor %}
 
+delete policy-options
+{#
 set policy-options policy-statement isp term t1 from preference 1
 set policy-options policy-statement isp term t1 then reject
-set policy-options policy-statement isp term t2 from instance primary-vr1 preference 10
+#}
+set policy-options policy-statement isp term t1 from instance primary-vr1 preference 10
+set policy-options policy-statement isp term t1 then accept
+set policy-options policy-statement isp term t2 from instance primary-vr2 preference 15
 set policy-options policy-statement isp term t2 then accept
-set policy-options policy-statement isp term t3 from instance primary-vr2 preference 11
+set policy-options policy-statement isp term t3 from instance alternate-vr1 preference 20
 set policy-options policy-statement isp term t3 then accept
-set policy-options policy-statement isp term t4 from instance alternate-vr1 preference 20
+set policy-options policy-statement isp term t4 from instance alternate-vr2 preference 25
 set policy-options policy-statement isp term t4 then accept
-set policy-options policy-statement isp term t5 from instance alternate-vr2 preference 21
-set policy-options policy-statement isp term t5 then accept
 
 set routing-instances lan-vr routing-options instance-import isp
 {% endif %}

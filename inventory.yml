@@ -4,8 +4,6 @@ all:
     srx:
       hosts:
         hussfw01.hussdogg.com:
-        hussfw02.hussdogg.com:
-    switches:
+    qfx:
       hosts:
         husssw01.hussdogg.com:
-        husssw02.hussdogg.com:

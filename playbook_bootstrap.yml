@@ -27,3 +27,4 @@
         cluster_id: 1
         enable: yes
         node_id: "{{ node_id }}"
+      when: inventory_hostname in groups['srx']

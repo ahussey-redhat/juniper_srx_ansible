@@ -1,0 +1,21 @@
+---
+- name: Bootstrap a JUNOS network device
+  hosts: qfx
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retrieve current configuration to allow rollback
+      juniper.device.config:
+        retrieve: committed
+        dest_dir: configs/backups
+        format: xml
+
+    - name: Create config files
+      ansible.builtin.template:
+        src: templates/qfx.j2
+        dest: "configs/candidate/{{ inventory_hostname }}.set"
+
+    - name: Configure host
+      juniper.device.config:
+        load: set
+        src: "configs/candidate/{{ inventory_hostname }}.set"

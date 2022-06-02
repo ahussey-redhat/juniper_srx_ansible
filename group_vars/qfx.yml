@@ -1,0 +1,14 @@
+aggregated_ethernet_interfaces:
+  - name: ae1
+    members:
+      - ge-0/0/40
+#      - ge-0/0/80
+  - name: ae2
+    members:
+      - ge-0/0/41
+#      - ge-0/0/81
+qfx_chassis:
+  - serial: DC753
+    member: 0
+  - serial: P8056
+    member: 1
