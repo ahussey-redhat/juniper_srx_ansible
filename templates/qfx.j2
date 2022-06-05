@@ -8,17 +8,17 @@ set system name-server {{ name_server }}
 set interfaces me0 unit 0 family inet dhcp
 
 {# configure virtual chassis #}
+set virtual-chassis preprovisioned
 {% for chassis in qfx_chassis %}
-set virtual-chassis member {{ chassis.member }} mastership-priority 255
-set virtual-chassis member {{ chassis.member }} serial-number {{ chassis.serial }}
+set virtual-chassis member {{ chassis.member }} serial-number {{ chassis.serial }} role routing-engine
 {% endfor %}
 set virtual-chassis no-split-detection
 
 {# configure vlans #}
 {% for subnet in subnets %}
 set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
-set vlans {{ subnet.vlan.tag }} l3-interface vlan.{{ subnet.vlan.id }}
-set interfaces vlan unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
+set vlans {{ subnet.vlan.tag }} l3-interface irb.{{ subnet.vlan.id }}
+set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
 {% endfor %}
 
 {# configure aggregated ethernet interfaces to connect to SRX cluster #}
@@ -27,7 +27,7 @@ set chassis aggregated-devices ethernet device-count 3
 {% for interface in aggregated_ethernet_interfaces %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
 {% for member in interface.members %}
-set interfaces {{ member }} gigether-options 802.3ad {{ interface.name }}
+set interfaces {{ member }} ether-options 802.3ad {{ interface.name }}
 {% endfor %}
 {% for subnet in subnets %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.id }}

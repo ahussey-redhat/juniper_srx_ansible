@@ -7,3 +7,4 @@ all:
     qfx:
       hosts:
         husssw01.hussdogg.com:
+        husssw02.hussdogg.com:
