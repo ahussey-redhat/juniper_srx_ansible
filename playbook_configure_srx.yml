@@ -1,6 +1,7 @@
 ---
 - name: Bootstrap a JUNOS network device
   hosts: srx
+  connection: local
   become: true
   gather_facts: false
   tasks:

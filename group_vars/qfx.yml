@@ -12,3 +12,6 @@ qfx_chassis:
     member: 0
   - serial: P8056-C
     member: 1
+virtual_routers:
+  - name: dmz-untrusted
+  - name: lan-trusted

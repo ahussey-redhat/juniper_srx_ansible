@@ -1,11 +1,7 @@
 ---
 #pppoe_physical_interface: pt-1/0/0
-pppoe_username: alexander.hussey@internode.on.net
-webinterface: reth1.100
-security_zones:
-  - name: lan-trust
-    allowed_protocols:
-      - all
+#pppoe_username: alexander.hussey@internode.on.net
+webinterface: reth0.100
 dhcp_wan1_nh: 192.168.3.1
 dhcp_wan1:
   - ge-0/0/2
@@ -19,3 +15,27 @@ physical_interfaces:
   - if: ge-0/0/5
   - if: ge-3/0/4
   - if: ge-3/0/5
+fabric_interfaces:
+  - interface: ge-0/0/7
+    fab_number: 0
+  - interface: ge-3/0/7
+    fab_number: 1
+security_zones:
+  - name: lan-trusted
+    allowed_protocols:
+      - all
+  - name: dmz-untrusted
+    allowed_protocols:
+      - dhcp
+      - ping
+virtual_routers:
+  - name: wan1-untrusted
+  - name: wan2-untrusted
+  - name: dmz-untrusted
+  - name: lan-trusted
+dhcp_reservations:
+  - name: services
+    hosts:
+      - mac: 02:98:c5:36:39:7b 
+        ip: 192.168.100.230
+        name: hussws03 

@@ -1,5 +1,5 @@
 {# configure global settings #}
-set system host-name {{ inventory_hostname }}
+set system host-name {{ host_name }}
 {% for name_server in system_name_servers %}
 set system name-server {{ name_server }}
 {% endfor %}
@@ -15,10 +15,19 @@ set virtual-chassis member {{ chassis.member }} serial-number {{ chassis.serial 
 set virtual-chassis no-split-detection
 
 {# configure vlans #}
+{% for router in virtual_routers %}
+set routing-instances {{ router.name }} instance-type virtual-router
+{% endfor %}
+
 {% for subnet in subnets %}
 set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
 set vlans {{ subnet.vlan.tag }} l3-interface irb.{{ subnet.vlan.id }}
 set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
+{% for router in virtual_routers %}
+{% if router in subnet.virtual_router%}
+set routing-instances lan-vr interface irb.{{ subnet.vlan.id }}
+{% endif %}
+{% endfor %}
 {% endfor %}
 
 {# configure aggregated ethernet interfaces to connect to SRX cluster #}
@@ -26,11 +35,19 @@ set chassis aggregated-devices ethernet device-count 3
 
 {% for interface in aggregated_ethernet_interfaces %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
+set interfaces {{ interface.name }} vlan-tagging
+set interfaces {{ interface.name }} aggregated-ether-options lacp active
+set interfaces {{ interface.name }} aggregated-ether-options lacp periodic slow
 {% for member in interface.members %}
 set interfaces {{ member }} ether-options 802.3ad {{ interface.name }}
 {% endfor %}
 {% for subnet in subnets %}
-set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.id }}
+set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.tag }}
 {% endfor %}
 
 {% endfor %}
+
+set protocols l2-learning global-mac-table-aging-time 120
+set protocols lldp interface all
+set protocols lldp-med interface all
+set protocols igmp-snooping vlan default

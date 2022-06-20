@@ -3,8 +3,12 @@ all:
   children:
     srx:
       hosts:
-        hussfw01.hussdogg.com:
+        hussfw01:
+        hussfw02:
     qfx:
       hosts:
-        husssw01.hussdogg.com:
-        husssw02.hussdogg.com:
+        husssw01_0:
+        husssw01_1:
+    console_server:
+      hosts:
+        hussws03.idm.hussdogg.com:
