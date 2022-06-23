@@ -16,7 +16,7 @@ set virtual-chassis no-split-detection
 
 {# configure vlans #}
 {% for router in virtual_routers %}
-set routing-instances {{ router.name }} instance-type virtual-router
+set routing-instances {{ router }} instance-type virtual-router
 {% endfor %}
 
 {% for subnet in subnets %}
@@ -25,7 +25,7 @@ set vlans {{ subnet.vlan.tag }} l3-interface irb.{{ subnet.vlan.id }}
 set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
 {% for router in virtual_routers %}
 {% if router in subnet.virtual_router%}
-set routing-instances lan-vr interface irb.{{ subnet.vlan.id }}
+set routing-instances {{ router }} interface irb.{{ subnet.vlan.id }}
 {% endif %}
 {% endfor %}
 {% endfor %}
@@ -51,3 +51,14 @@ set protocols l2-learning global-mac-table-aging-time 120
 set protocols lldp interface all
 set protocols lldp-med interface all
 set protocols igmp-snooping vlan default
+
+{# configure LAN interfaces #}
+{% for interface in lan_interfaces %}
+{% if interface.vlans is defined %}
+set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
+{% for vlan in interface.vlans %}
+set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ vlan }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}

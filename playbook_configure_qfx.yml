@@ -1,7 +1,7 @@
 ---
 - name: Bootstrap a JUNOS network device
   hosts: qfx
-  become: false
+  become: true
   gather_facts: false
   tasks:
     - name: Retrieve current configuration to allow rollback
@@ -9,8 +9,6 @@
         retrieve: committed
         dest_dir: configs/backups
         format: set
-      vars:
-        port: "{{ inventory_hostname }}"
 
     - name: Create config files
       ansible.builtin.template:

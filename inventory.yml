@@ -9,6 +9,3 @@ all:
       hosts:
         husssw01_0:
         husssw01_1:
-    console_server:
-      hosts:
-        hussws03.idm.hussdogg.com:

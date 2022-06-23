@@ -13,5 +13,11 @@ qfx_chassis:
   - serial: P8056-C
     member: 1
 virtual_routers:
-  - name: dmz-untrusted
-  - name: lan-trusted
+  - dmz-untrusted
+  - lan-trusted
+lan_interfaces:
+  - name: ge-0/0/38
+    vlans:
+      - 100
+      - 103
+    
