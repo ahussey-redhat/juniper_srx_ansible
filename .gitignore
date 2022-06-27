@@ -2,3 +2,4 @@ configs/candidate/*
 !configs/candidate/README.md
 configs/backups/*
 !configs/backups/README.md
+group_vars/all/secrets.yml

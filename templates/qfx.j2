@@ -21,11 +21,16 @@ set routing-instances {{ router }} instance-type virtual-router
 
 {% for subnet in subnets %}
 set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
-set vlans {{ subnet.vlan.tag }} l3-interface irb.{{ subnet.vlan.id }}
+set vlans {{ subnet.vlan.tag }} l3-interface {{ subnet.vlan.l3_interface }}
 set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
 {% for router in virtual_routers %}
 {% if router in subnet.virtual_router%}
-set routing-instances {{ router }} interface irb.{{ subnet.vlan.id }}
+set routing-instances {{ router }} interface {{ subnet.vlan.l3_interface }}
+set routing-instances {{ router }} forwarding-options dhcp-relay server-group {{ subnet.vlan.tag }} {{ subnet.gateway }}
+set routing-instances {{ router }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} active-server-group {{ subnet.vlan.tag }}
+set routing-instances {{ router }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
+set routing-instances {{ router }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} overrides
+set routing-instances {{ router }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} relay-option option-number 60
 {% endif %}
 {% endfor %}
 {% endfor %}
@@ -36,6 +41,7 @@ set chassis aggregated-devices ethernet device-count 3
 {% for interface in aggregated_ethernet_interfaces %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
 set interfaces {{ interface.name }} vlan-tagging
+set interfaces {{ interface.name }} native-vlan-id 1
 set interfaces {{ interface.name }} aggregated-ether-options lacp active
 set interfaces {{ interface.name }} aggregated-ether-options lacp periodic slow
 {% for member in interface.members %}
@@ -56,8 +62,13 @@ set protocols igmp-snooping vlan default
 {% for interface in lan_interfaces %}
 {% if interface.vlans is defined %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
+set interfaces {{ interface.name }} native-vlan-id 1
 {% for vlan in interface.vlans %}
-set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ vlan }}
+{% for subnet in subnets %}
+{% if vlan == subnet.vlan.id %}
+set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.tag }}
+{% endif %}
+{% endfor %}
 {% endfor %}
 {% endif %}
 

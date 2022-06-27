@@ -26,16 +26,16 @@ security_zones:
       - all
   - name: dmz-untrusted
     allowed_protocols:
-      - dhcp
-      - ping
+      - all
 virtual_routers:
-  - name: wan1-untrusted
-  - name: wan2-untrusted
-  - name: dmz-untrusted
-  - name: lan-trusted
+  - wan1-untrusted
+  - wan2-untrusted
+  - dmz-untrusted
+  - lan-trusted
 dhcp_reservations:
   - name: services
     hosts:
-      - mac: 02:98:c5:36:39:7b 
+      - mac: 02:98:c5:36:39:7b
         ip: 192.168.100.230
-        name: hussws03 
+        name: hussws03
+        subnet_name: services
