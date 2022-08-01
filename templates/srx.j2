@@ -1,14 +1,21 @@
 {# configure global settings #}
 delete
-set system root-authentication encrypted-password {{ junos_password | password_hash('md5') }}
+set system root-authentication encrypted-password {{ junos_password | password_hash('md5', 'juniper') }}
 set system host-name {{ host_name }}
+set system domain-name {{ domain_name }}
 {% for name_server in system_name_servers %}
 set system name-server {{ name_server }}
 {% endfor %}
 set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
 
+{# configure services #}
+set system services web-management http interface {{ webinterface }}
+set system services web-management https interface {{ webinterface }}
+set system services web-management https system-generated-certificate
+
 {# configure redundant ethernet #}
-set chassis cluster reth-count 1
+set chassis cluster reth-count 3
+{# LAN reth #}
 set chassis cluster redundancy-group 1 node 0 priority 200
 set chassis cluster redundancy-group 1 node 1 priority 100
 set interfaces reth0 redundant-ether-options redundancy-group 1
@@ -16,15 +23,25 @@ set interfaces reth0 redundant-ether-options lacp active
 set interfaces reth0 redundant-ether-options lacp periodic slow
 set interfaces reth0 flexible-vlan-tagging
 set interfaces reth0 native-vlan-id 1
+{# WAN reth #}
+{# Primary WAN #}
+set chassis cluster redundancy-group 2 node 0 priority 200
+set chassis cluster redundancy-group 2 node 1 priority 100
+set interfaces reth1 redundant-ether-options redundancy-group 2
+{# Alternate WAN #}
+set chassis cluster redundancy-group 3 node 0 priority 200
+set chassis cluster redundancy-group 3 node 1 priority 100
+set interfaces reth2 redundant-ether-options redundancy-group 3
 
 {% for interface in fabric_interfaces %}
 set interfaces fab{{ interface.fab_number}} fabric-options member-interfaces {{ interface.interface }}
 {% endfor %}
 
-set protocols l2-learning global-mode transparent-bridge
+set protocols l2-learning global-mode switching
 set protocols l2-learning global-mac-table-aging-time 120
 set protocols lldp interface all
 set protocols lldp-med interface all
+set protocols rstp interface all
 
 {# configure physical interfaces #}
 {% for interface in physical_interfaces %}
@@ -41,6 +58,7 @@ set security policies from-zone {{ zone.name }} to-zone {{ zone.name }} policy {
 set security policies from-zone {{ zone.name }} to-zone {{ zone.name }} policy {{ zone.name }}-to-{{ zone.name }} then permit
 {% for protocol in zone.allowed_protocols %}
 set security zones security-zone {{ zone.name }} host-inbound-traffic system-services {{ protocol }}
+set security zones security-zone {{ zone.name }} host-inbound-traffic protocols {{ protocol }}
 {% endfor %}
 {% for subnet in subnets %}
 {% if zone.name in subnet.security_zones %}
@@ -48,34 +66,38 @@ set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan
 set interfaces reth0 unit {{ subnet.vlan.id }} family inet address {{ subnet.gateway }}/{{ subnet.mask }}
 set interfaces reth0 unit {{ subnet.vlan.id }} vlan-id {{ subnet.vlan.id }}
 set interfaces reth0 unit {{ subnet.vlan.id }} description {{ subnet.vlan.tag }}
+{% for protocol in zone.allowed_protocols %}
+set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan.id }} host-inbound-traffic system-services {{ protocol }}
+set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan.id }} host-inbound-traffic protocols {{ protocol }}
+{% endfor %}
 {% endif %}
 {% endfor %}
 {% endfor %}
 
 {# LAN to WAN security policies #}
-set security policies from-zone lan-trusted to-zone primary-untrust1 policy lan-trusted-to-primary-untrust match source-address any
-set security policies from-zone lan-trusted to-zone primary-untrust1 policy lan-trusted-to-primary-untrust match destination-address any
-set security policies from-zone lan-trusted to-zone primary-untrust1 policy lan-trusted-to-primary-untrust match application any
-set security policies from-zone lan-trusted to-zone primary-untrust1 policy lan-trusted-to-primary-untrust match dynamic-application any
-set security policies from-zone lan-trusted to-zone primary-untrust1 policy lan-trusted-to-primary-untrust then permit
+set security policies from-zone lan-trusted to-zone primary-untrusted policy lan-trusted-to-primary-untrusted match source-address any
+set security policies from-zone lan-trusted to-zone primary-untrusted policy lan-trusted-to-primary-untrusted match destination-address any
+set security policies from-zone lan-trusted to-zone primary-untrusted policy lan-trusted-to-primary-untrusted match application any
+set security policies from-zone lan-trusted to-zone primary-untrusted policy lan-trusted-to-primary-untrusted match dynamic-application any
+set security policies from-zone lan-trusted to-zone primary-untrusted policy lan-trusted-to-primary-untrusted then permit
 
-set security policies from-zone lan-trusted to-zone primary-untrust2 policy lan-trusted-to-primary-untrust2 match source-address any
-set security policies from-zone lan-trusted to-zone primary-untrust2 policy lan-trusted-to-primary-untrust2 match destination-address any
-set security policies from-zone lan-trusted to-zone primary-untrust2 policy lan-trusted-to-primary-untrust2 match application any
-set security policies from-zone lan-trusted to-zone primary-untrust2 policy lan-trusted-to-primary-untrust2 match dynamic-application none
-set security policies from-zone lan-trusted to-zone primary-untrust2 policy lan-trusted-to-primary-untrust2 then permit
+set security policies from-zone primary-untrusted to-zone lan-trusted policy primary-untrusted-to-lan-trusted match source-address any
+set security policies from-zone primary-untrusted to-zone lan-trusted policy primary-untrusted-to-lan-trusted match destination-address any
+set security policies from-zone primary-untrusted to-zone lan-trusted policy primary-untrusted-to-lan-trusted match application any
+set security policies from-zone primary-untrusted to-zone lan-trusted policy primary-untrusted-to-lan-trusted match dynamic-application any
+set security policies from-zone primary-untrusted to-zone lan-trusted policy primary-untrusted-to-lan-trusted then permit
 
-set security policies from-zone lan-trusted to-zone alternate-untrust1 policy lan-trusted-to-alternate-untrust1 match source-address any
-set security policies from-zone lan-trusted to-zone alternate-untrust1 policy lan-trusted-to-alternate-untrust1 match destination-address any
-set security policies from-zone lan-trusted to-zone alternate-untrust1 policy lan-trusted-to-alternate-untrust1 match application any
-set security policies from-zone lan-trusted to-zone alternate-untrust1 policy lan-trusted-to-alternate-untrust1 match dynamic-application none
-set security policies from-zone lan-trusted to-zone alternate-untrust1 policy lan-trusted-to-alternate-untrust1 then permit
+set security policies from-zone lan-trusted to-zone alternate-untrusted policy lan-trusted-to-alternate-untrusted match source-address any
+set security policies from-zone lan-trusted to-zone alternate-untrusted policy lan-trusted-to-alternate-untrusted match destination-address any
+set security policies from-zone lan-trusted to-zone alternate-untrusted policy lan-trusted-to-alternate-untrusted match application any
+set security policies from-zone lan-trusted to-zone alternate-untrusted policy lan-trusted-to-alternate-untrusted match dynamic-application any
+set security policies from-zone lan-trusted to-zone alternate-untrusted policy lan-trusted-to-alternate-untrusted then permit
 
-set security policies from-zone lan-trusted to-zone alternate-untrust2 policy lan-trusted-to-alternate-untrust2 match source-address any
-set security policies from-zone lan-trusted to-zone alternate-untrust2 policy lan-trusted-to-alternate-untrust2 match destination-address any
-set security policies from-zone lan-trusted to-zone alternate-untrust2 policy lan-trusted-to-alternate-untrust2 match application any
-set security policies from-zone lan-trusted to-zone alternate-untrust2 policy lan-trusted-to-alternate-untrust2 match dynamic-application none
-set security policies from-zone lan-trusted to-zone alternate-untrust2 policy lan-trusted-to-alternate-untrust2 then permit
+set security policies from-zone alternate-untrusted to-zone lan-trusted policy alternate-untrusted-to-lan-trusted match source-address any
+set security policies from-zone alternate-untrusted to-zone lan-trusted policy alternate-untrusted-to-lan-trusted match destination-address any
+set security policies from-zone alternate-untrusted to-zone lan-trusted policy alternate-untrusted-to-lan-trusted match application any
+set security policies from-zone alternate-untrusted to-zone lan-trusted policy alternate-untrusted-to-lan-trusted match dynamic-application any
+set security policies from-zone alternate-untrusted to-zone lan-trusted policy alternate-untrusted-to-lan-trusted then permit
 
 {# configure virtual-routers for each subnet #}
 {% for subnet in subnets %}
@@ -89,8 +111,12 @@ set routing-instances {{ router }} access address-assignment pool {{ subnet.name
 {% for name_server in subnet.name_servers %}
 set routing-instances {{ router }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes name-server {{ name_server }}
 {% endfor %}
-set routing-instances {{ router }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.gateway }}
+set routing-instances {{ router }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.last_ip }}
 set routing-instances {{ router }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes maximum-lease-time {{ subnet.lease_time }}
+{# configure VLANs for each subnet #}
+set routing-instances {{ router }} instance-type virtual-router
+set routing-instances {{ router }} interface reth0.{{ subnet.vlan.id }}
+set routing-instances {{ router }} routing-options instance-import isp
 {# configure DHCP reservations #}
 {% for pool in dhcp_reservations %}
 {% for host in pool.hosts %}
@@ -100,39 +126,56 @@ set routing-instances {{ router }} access address-assignment pool {{ pool.name }
 {% endfor %}
 {% endfor %}
 set routing-instances {{ router }} system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface reth0.{{ subnet.vlan.id }}
-{# configure VLANs for each subnet #}
-set routing-instances {{ router }} instance-type virtual-router
-set routing-instances {{ router }} interface reth0.{{ subnet.vlan.id }}
+set policy-options policy-statement to-{{ router }} term t0 from instance {{ router }}
+set policy-options policy-statement to-{{ router }} term t0 then accept
 {% endif %}
 {% endfor %}
 {% endfor %}
 
-{# configure services #}
-set system services web-management http interface {{ webinterface }}
-set system services web-management https interface {{ webinterface }}
-set system services web-management https system-generated-certificate
+
 
 {# configure WAN #}
+{# this count is used to keep track of term instances #}
+{% set count = namespace(value=1) %}
+set policy-options policy-statement isp term t0 from preference 1
+set policy-options policy-statement isp term t0 then reject
 {% if dhcp_wan1 is defined %}
+set interfaces reth1 unit 0 family inet dhcp-client
+set interfaces reth1 description primary-isp
+set routing-instances primary-vr instance-type virtual-router
+set routing-instances primary-vr interface reth1
+set routing-instances primary-vr routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh }}
+set routing-instances primary-vr routing-options instance-import to-lan-trusted
+set policy-options policy-statement isp term t{{ count.value }} from instance primary-vr
+set policy-options policy-statement isp term t{{ count.value }} then preference 10
+set policy-options policy-statement isp term t{{ count.value }} then accept
+set security zones security-zone primary-untrusted host-inbound-traffic system-services all
+set security zones security-zone primary-untrusted host-inbound-traffic protocols all
+set security zones security-zone primary-untrusted interfaces reth1 host-inbound-traffic system-services all
+set security zones security-zone primary-untrusted interfaces reth1 host-inbound-traffic protocols all
 {% for wan_interface in dhcp_wan1 %}
-set interfaces {{ wan_interface }} unit 0 family inet dhcp-client
-set interfaces {{ wan_interface }} description primary-isp
-set routing-instances primary-vr{{ loop.index }} instance-type virtual-router
-set routing-instances primary-vr{{ loop.index }} interface {{ wan_interface }}
-set routing-instances primary-vr{{ loop.index }} routing-options interface-routes rib-group inet isp
-set routing-instances primary-vr{{ loop.index }} routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh }}
-set security zones security-zone primary-untrust{{ loop.index }} interfaces {{ wan_interface }} host-inbound-traffic system-services all
+set interfaces {{ wan_interface }} gigether-options redundant-parent reth1
+{% set count.value = count.value +1 %}
 {% endfor %}
 {% endif %}
 
 {% if dhcp_wan2 is defined %}
+set interfaces reth2 unit 0 family inet dhcp-client
+set interfaces reth2 description alternate-isp
+set routing-instances alternate-vr instance-type virtual-router
+set routing-instances alternate-vr interface reth2
+set routing-instances alternate-vr routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh }}
+set routing-instances alternate-vr routing-options instance-import to-lan-trusted
+set policy-options policy-statement isp term t{{ count.value }} from instance alternate-vr
+set policy-options policy-statement isp term t{{ count.value }} then preference 20
+set policy-options policy-statement isp term t{{ count.value }} then accept
+set security zones security-zone alternate-untrusted host-inbound-traffic system-services all
+set security zones security-zone alternate-untrusted host-inbound-traffic protocols all
+set security zones security-zone alternate-untrusted interfaces reth2 host-inbound-traffic system-services all
+set security zones security-zone alternate-untrusted interfaces reth2 host-inbound-traffic protocols all
 {% for wan_interface in dhcp_wan2 %}
-set interfaces {{ wan_interface }} unit 0 family inet dhcp-client
-set interfaces {{ wan_interface }} description alternate-isp
-set routing-instances alternate-vr{{ loop.index }} instance-type virtual-router
-set routing-instances alternate-vr{{ loop.index }} interface {{ wan_interface }}
-set routing-instances alternate-vr{{ loop.index }} routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh }}
-set security zones security-zone alternate-untrust{{ loop.index }} interfaces {{ wan_interface }} host-inbound-traffic system-services all
+set interfaces {{ wan_interface }} gigether-options redundant-parent reth2
+{% set count.value = count.value +1 %}
 {% endfor %}
 {% endif %}
 
@@ -152,67 +195,42 @@ set interfaces {{ pppoe_interface }} unit 0 family inet mtu 1492
 
 {# Configure WAN failover #}
 {% if dhcp_wan2 is defined %}
-set routing-options rib-groups isp import-rib primary-vr1.inet.0
-set routing-options rib-groups isp import-rib primary-vr2.inet.0
-set routing-options rib-groups isp import-rib alternate-vr1.inet.0
-set routing-options rib-groups isp import-rib alternate-vr2.inet.0
+set routing-options rib-groups to-primary-vr import-rib primary-vr.inet.0
+set routing-options rib-groups to-alternate-vr import-rib alternate-vr.inet.0
+set routing-options rib-groups to-lan-trusted import-rib lan-trusted.inet.0
+set routing-options rib-groups to-lan-trusted import-rib primary-vr.inet.0
+set routing-options rib-groups to-lan-trusted import-rib alternate-vr.inet.0
 
-{% for wan_interface in dhcp_wan1 %}
-{# Configure source NAT #}
-set security nat source rule-set to-primary-isp{{ loop.index }} from zone lan-trusted
-set security nat source rule-set to-primary-isp{{ loop.index }} to zone primary-untrust{{ loop.index }}
-set security nat source rule-set to-primary-isp{{ loop.index }} rule p{{ loop.index }} match source-address 0.0.0.0/0
-set security nat source rule-set to-primary-isp{{ loop.index }} rule p{{ loop.index }} match destination-address 0.0.0.0/0
-set security nat source rule-set to-primary-isp{{ loop.index }} rule p{{ loop.index }} then source-nat interface
-
-{# Configure route monitoring #}
-set services rpm probe primary-isp{{ loop.index }} test google probe-type icmp-ping
-set services rpm probe primary-isp{{ loop.index }} test google target address 8.8.8.8
-set services rpm probe primary-isp{{ loop.index }} test google probe-count 5
-set services rpm probe primary-isp{{ loop.index }} test google probe-interval 1
-set services rpm probe primary-isp{{ loop.index }} test google test-interval 30
-set services rpm probe primary-isp{{ loop.index }} test google thresholds successive-loss 5
-set services rpm probe primary-isp{{ loop.index }} test google thresholds total-loss 5
-set services rpm probe primary-isp{{ loop.index }} test google next-hop {{ dhcp_wan1_nh }}
-set services rpm probe primary-isp{{ loop.index }} test google destination-interface {{ wan_interface }}
-
-set services ip-monitoring policy primary-isp{{ loop.index }} match rpm-probe primary-isp{{ loop.index }}
-set services ip-monitoring policy primary-isp{{ loop.index }} then preferred-route routing-instances primary-vr{{ loop.index }} route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh}}
+{% for virtual_router in virtual_routers %}
+set routing-options rib-groups to-primary-vr import-rib {{virtual_router }}.inet.0
+set routing-options rib-groups to-alternate-vr import-rib {{virtual_router }}.inet.0
 {% endfor %}
 
-{% for wan_interface in dhcp_wan2 %}
-{# Configure source NAT #}
-set security nat source rule-set to-alternate-isp{{ loop.index }} from zone lan-trusted
-set security nat source rule-set to-alternate-isp{{ loop.index }} to zone alternate-untrust{{ loop.index }}
-set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} match source-address 0.0.0.0/0
-set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} match destination-address 0.0.0.0/0
-set security nat source rule-set to-alternate-isp{{ loop.index }} rule a{{ loop.index }} then source-nat interface
+{# Configure source NAT for primary WAN #}
+set security nat source rule-set to-primary-isp from routing-instance lan-trusted
+set security nat source rule-set to-primary-isp to routing-instance primary-vr
+set security nat source rule-set to-primary-isp rule p1 match source-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp rule p1 match destination-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp rule p1 then source-nat interface
 
-{# Configure route monitoring #}
-set services rpm probe alternate-isp{{ loop.index }} test google probe-type icmp-ping
-set services rpm probe alternate-isp{{ loop.index }} test google target address 8.8.8.8
-set services rpm probe alternate-isp{{ loop.index }} test google probe-count 10
-set services rpm probe alternate-isp{{ loop.index }} test google probe-interval 5
-set services rpm probe alternate-isp{{ loop.index }} test google test-interval 60
-set services rpm probe alternate-isp{{ loop.index }} test google thresholds successive-loss 10
-set services rpm probe alternate-isp{{ loop.index }} test google thresholds total-loss 10
-set services rpm probe alternate-isp{{ loop.index }} test google next-hop {{ dhcp_wan2_nh }}
-set services rpm probe alternate-isp{{ loop.index }} test google destination-interface {{ wan_interface }}
+{# Configure route monitoring for primary WAN #}
+set services rpm probe wan-probe test google probe-type icmp-ping
+set services rpm probe wan-probe test google target address 8.8.8.8
+set services rpm probe wan-probe test google probe-count 5
+set services rpm probe wan-probe test google probe-interval 1
+set services rpm probe wan-probe test google test-interval 30
+set services rpm probe wan-probe test google thresholds successive-loss 5
+set services rpm probe wan-probe test google thresholds total-loss 5
+set services rpm probe wan-probe test google next-hop {{ dhcp_wan1_nh }}
+set services rpm probe wan-probe test google destination-interface reth1
 
-set services ip-monitoring policy alternate-isp{{ loop.index }} match rpm-probe alternate-isp{{ loop.index }}
-set services ip-monitoring policy alternate-isp{{ loop.index }} then preferred-route routing-instances alternate-vr{{ loop.index }} route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh}}
-{% endfor %}
-set policy-options policy-statement isp term t1 from preference 1
-set policy-options policy-statement isp term t1 then reject
-set policy-options policy-statement isp term t2 from instance primary-vr1 preference 10
-set policy-options policy-statement isp term t2 then accept
-set policy-options policy-statement isp term t3 from instance primary-vr2 preference 15
-set policy-options policy-statement isp term t3 then accept
-set policy-options policy-statement isp term t4 from instance alternate-vr1 preference 20
-set policy-options policy-statement isp term t4 then accept
-set policy-options policy-statement isp term t5 from instance alternate-vr2 preference 25
-set policy-options policy-statement isp term t5 then accept
+{# Configure source NAT for alternate WAN #}
+set security nat source rule-set to-alternate-isp from routing-instance lan-trusted
+set security nat source rule-set to-alternate-isp to routing-instance alternate-vr
+set security nat source rule-set to-alternate-isp rule a1 match source-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp rule a1 match destination-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp rule a1 then source-nat interface
 
-set routing-instances lan-trusted routing-options instance-import isp
-set routing-instances dmz-untrusted routing-options instance-import isp
+set services ip-monitoring policy wan-policy match rpm-probe wan-probe
+set services ip-monitoring policy wan-policy then preferred-route routing-instances alternate-vr route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh}}
 {% endif %}

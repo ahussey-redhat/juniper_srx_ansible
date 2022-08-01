@@ -5,6 +5,8 @@ set system name-server {{ name_server }}
 {% endfor %}
 {# set chassis auto-image-upgrade #}
 
+{# set interfaces me0 unit 0 family inet dhcp #}
+
 {# configure virtual chassis #}
 set virtual-chassis preprovisioned
 {% for chassis in qfx_chassis %}
@@ -15,26 +17,16 @@ set virtual-chassis no-split-detection
 {# configure vlans #}
 {% for subnet in subnets %}
 set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
+{#
 set vlans {{ subnet.vlan.tag }} l3-interface {{ subnet.vlan.l3_interface }}
 set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
-set routing-instances {{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
-set routing-instances {{ subnet.vlan.tag }} instance-type virtual-router
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay server-group {{ subnet.vlan.tag }} {{ subnet.gateway }}
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} active-server-group {{ subnet.vlan.tag }}
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} overrides
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} relay-option option-number 60
-set routing-instances {{ subnet.vlan.tag }} routing-options static route 0.0.0.0/0 next-hop {{ subnet.gateway }}
-set routing-instances {{ subnet.vlan.tag }} routing-options interface-routes rib-group inet {{ subnet.vlan.tag }}
+#}
+set forwarding-options dhcp-relay server-group {{ subnet.vlan.tag }} {{ subnet.gateway }}
+set forwarding-options dhcp-relay group {{ subnet.vlan.tag }} active-server-group {{ subnet.vlan.tag }}
+set forwarding-options dhcp-relay group {{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
+set forwarding-options dhcp-relay group {{ subnet.vlan.tag }} overrides
+set forwarding-options dhcp-relay group {{ subnet.vlan.tag }} relay-option option-number 60
 
-set routing-options rib-groups {{ subnet.vlan.tag }} import-rib {{ subnet.vlan.tag }}.inet.0
-{% set count = namespace(value=0) %}
-{% for rib in subnet.allowed_ribs %}
-set policy-options policy-statement allowed-from-{{ subnet.vlan.tag }} term t{{count.value}} from instance {{ rib }}
-set policy-options policy-statement allowed-from-{{ subnet.vlan.tag }} term t{{count.value}} then accept
-set routing-options rib-groups {{ subnet.vlan.tag }} import-rib {{ rib }}.inet.0
-{% set count.value = count.value +1 %}
-{% endfor %}
 {% endfor %}
 
 {# configure aggregated ethernet interfaces to connect to SRX cluster #}
@@ -58,7 +50,8 @@ set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan member
 set protocols l2-learning global-mac-table-aging-time 120
 set protocols lldp interface all
 set protocols lldp-med interface all
-set protocols igmp-snooping vlan default
+set protocols igmp-snooping vlan all
+set protocols rstp interface all
 
 {# configure LAN interfaces #}
 {% for interface in lan_interfaces %}

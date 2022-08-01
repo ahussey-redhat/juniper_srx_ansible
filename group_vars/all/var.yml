@@ -22,14 +22,20 @@ subnets:
     gateway: 192.168.1.1
     last_ip: 192.168.1.254
     lease_time: 3600
-    name: default
+    name: misc
     vlan:
-      tag: default
+      tag: misc
       id: 1
       l3_interface: irb.1
     security_zones:
       - lan-trusted
     virtual_router: lan-trusted
+    allowed_ribs:
+      - services
+      - security
+      - vms
+      - hypervisors
+      - clients
 # Services
   - network_address: 192.168.100
     mask: 24
@@ -37,9 +43,10 @@ subnets:
     dhcp_end: 192.168.100.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 1.1.1.1
+#      - 192.168.100.25
+#      - 192.168.100.3
+#      - 192.168.100.24
     gateway: 192.168.100.1
     last_ip: 192.168.100.254
     lease_time: 3600
@@ -51,6 +58,13 @@ subnets:
     security_zones:
       - lan-trusted
     virtual_router: lan-trusted
+    allowed_ribs:
+      - security
+      - vms
+      - hypervisors
+      - dmz
+      - misc
+      - clients
 # Security
   - network_address: 192.168.101
     mask: 24
@@ -72,6 +86,11 @@ subnets:
     security_zones:
       - lan-trusted
     virtual_router: lan-trusted
+    allowed_ribs:
+      - services
+      - vms
+      - hypervisors
+      - clients
 # DMZ
   - network_address: 192.168.102
     mask: 24
@@ -91,8 +110,13 @@ subnets:
       id: 102
       l3_interface: irb.102
     security_zones:
-      - dmz-untrusted
-    virtual_router: dmz-untrusted
+      - lan-trusted
+    virtual_router: lan-trusted
+    allowed_ribs:
+      - services
+      - vms
+      - misc
+      - clients
 # Clients
   - network_address: 192.168.103
     mask: 24
@@ -100,9 +124,10 @@ subnets:
     dhcp_end: 192.168.103.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 1.1.1.1
+#      - 192.168.100.25
+#      - 192.168.100.3
+#      - 192.168.100.24
     gateway: 192.168.103.1
     last_ip: 192.168.103.254
     lease_time: 3600
@@ -114,6 +139,13 @@ subnets:
     security_zones:
       - lan-trusted
     virtual_router: lan-trusted
+    allowed_ribs:
+      - services
+      - vms
+      - hypervisors
+      - dmz
+      - misc
+      - clients
 # VMs
   - network_address: 10.10.0
     mask: 16
@@ -135,6 +167,13 @@ subnets:
     security_zones:
       - lan-trusted
     virtual_router: lan-trusted
+    allowed_ribs:
+      - services
+      - vms
+      - hypervisors
+      - dmz
+      - misc
+      - clients
 # Hypervisors
   - network_address: 172.18.0
     mask: 16
@@ -156,3 +195,10 @@ subnets:
     security_zones:
       - lan-trusted
     virtual_router: lan-trusted
+    allowed_ribs:
+      - services
+      - vms
+      - hypervisors
+      - dmz
+      - misc
+      - clients

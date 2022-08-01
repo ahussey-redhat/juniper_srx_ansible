@@ -24,13 +24,12 @@ security_zones:
   - name: lan-trusted
     allowed_protocols:
       - all
-  - name: dmz-untrusted
-    allowed_protocols:
-      - all
+wan_virtual_routers:
+  - primary-isp-1-untrusted
+  - primary-isp-2-untrusted
+  - alternate-isp-1-untrusted
+  - alternate-isp-2-untrusted
 virtual_routers:
-  - wan1-untrusted
-  - wan2-untrusted
-  - dmz-untrusted
   - lan-trusted
 dhcp_reservations:
   - name: services
