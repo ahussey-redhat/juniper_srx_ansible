@@ -3,32 +3,37 @@
 #pppoe_username: alexander.hussey@internode.on.net
 webinterface: reth0.100
 dhcp_wan1_nh: 192.168.3.1
+dhcp1_address: 192.168.3.30/24
 dhcp_wan1:
-  - ge-0/0/2
-  - ge-3/0/2
+  - ge-0/0/6
+  - ge-3/0/6
 dhcp_wan2_nh: 192.168.2.1
+dhcp2_address: 192.168.2.20/24
 dhcp_wan2:
-  - ge-0/0/3
-  - ge-3/0/3
+  - ge-0/0/7
+  - ge-3/0/7
 physical_interfaces:
   - if: ge-0/0/4
   - if: ge-0/0/5
   - if: ge-3/0/4
   - if: ge-3/0/5
-fabric_interfaces:
-  - interface: ge-0/0/7
+switch_fabric_interfaces:
+  - interface: ge-0/0/3
     fab_number: 0
-  - interface: ge-3/0/7
+  - interface: ge-3/0/3
+    fab_number: 1
+fabric_interfaces:
+  - interface: ge-0/0/2
+    fab_number: 0
+  - interface: ge-3/0/2
     fab_number: 1
 security_zones:
   - name: lan-trusted
     allowed_protocols:
       - all
 wan_virtual_routers:
-  - primary-isp-1-untrusted
-  - primary-isp-2-untrusted
-  - alternate-isp-1-untrusted
-  - alternate-isp-2-untrusted
+  - primary-isp-untrusted
+  - alternate-isp-untrusted
 virtual_routers:
   - lan-trusted
 dhcp_reservations:
@@ -37,4 +42,8 @@ dhcp_reservations:
       - mac: 02:98:c5:36:39:7b
         ip: 192.168.100.230
         name: hussws03
-        subnet_name: services
+  - name: hypervisors
+    hosts:
+      - mac: c6:e7:b1:e1:54:48
+        ip: 172.18.0.13
+        name: node4
