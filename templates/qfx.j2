@@ -13,44 +13,17 @@ set virtual-chassis member {{ chassis.member }} serial-number {{ chassis.serial 
 set virtual-chassis no-split-detection
 
 delete vlans
-{#
-delete routing-instances
-delete policy-options
-#}
+
 {# configure vlans #}
 {% for subnet in subnets %}
 set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
-{#
-set vlans {{ subnet.vlan.tag }} l3-interface {{ subnet.vlan.l3_interface }}
-set interfaces irb unit {{ subnet.vlan.id }} family inet address {{ subnet.last_ip }}/{{ subnet.mask }}
-{#
-set routing-instances {{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
-set routing-instances {{ subnet.vlan.tag }} instance-type virtual-router
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay server-group {{ subnet.vlan.tag }} {{ subnet.gateway }}
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} active-server-group {{ subnet.vlan.tag }}
-
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} interface {{ subnet.vlan.l3_interface }}
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} overrides
-set routing-instances {{ subnet.vlan.tag }} forwarding-options dhcp-relay group {{ subnet.vlan.tag }} relay-option option-number 60
-set routing-instances {{ subnet.vlan.tag }} routing-options static route 0.0.0.0/0 next-hop {{ subnet.gateway }}
-set routing-instances {{ subnet.vlan.tag }} routing-options interface-routes rib-group inet {{ subnet.vlan.tag }}
-
-set routing-options rib-groups {{ subnet.vlan.tag }} import-rib {{ subnet.vlan.tag }}.inet.0
-{% set count = namespace(value=0) %}
-{% for rib in subnet.allowed_ribs %}
-set policy-options policy-statement allowed-from-{{ subnet.vlan.tag }} term t{{count.value}} from instance {{ rib }}
-set policy-options policy-statement allowed-from-{{ subnet.vlan.tag }} term t{{count.value}} then accept
-set routing-options rib-groups {{ subnet.vlan.tag }} import-rib {{ rib }}.inet.0
-{% set count.value = count.value +1 %}
-{% endfor %}
-#}
 {% endfor %}
 
 {#
     Configure aggregated ethernet interfaces to connect to SRX cluster.
     The number of aggregated devices inlcudes both uplink and host devices.
 #}
-set chassis aggregated-devices ethernet device-count 6
+set chassis aggregated-devices ethernet device-count 16
 
 {% for interface in aggregated_ethernet_interfaces %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
@@ -58,7 +31,9 @@ set interfaces {{ interface.name }} vlan-tagging
 set interfaces {{ interface.name }} native-vlan-id 1
 set interfaces {{ interface.name }} aggregated-ether-options lacp active
 set interfaces {{ interface.name }} aggregated-ether-options lacp periodic slow
+{#
 set interfaces {{ interface.name }} gratuitous-arp-reply
+#}
 set protocols rstp interface {{ interface.name }}
 {% for member in interface.members %}
 set interfaces {{ member }} ether-options 802.3ad {{ interface.name }}

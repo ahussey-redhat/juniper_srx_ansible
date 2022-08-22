@@ -27,23 +27,130 @@ fabric_interfaces:
     fab_number: 0
   - interface: ge-3/0/2
     fab_number: 1
+wan_security_zones:
+  - name: primary-isp-untrusted
+    allowed_protocols:
+      - all
+  - name: alternate-isp-untrusted
+    allowed_protocols:
+      - all
 security_zones:
   - name: lan-trusted
     allowed_protocols:
       - all
+    permitted_zones:
+      - name: dmz-untrusted
+  - name: dmz-untrusted
+    allowed_protocols:
+      - all
+    permitted_zones:
+      - name: lan-trusted
+  - name: guest-untrusted
+    allowed_protocols:
+      - all
 wan_virtual_routers:
-  - primary-isp-untrusted
-  - alternate-isp-untrusted
+  - primary-isp-vr
+  - alternate-isp-vr
 virtual_routers:
-  - lan-trusted
+  - name: lan-vr
+    allowed_ribs:
+      - dmz-vr
+  - name: dmz-vr
+    allowed_ribs:
+      - lan-vr
+  - name: guest-vr
 dhcp_reservations:
   - name: services
     hosts:
       - mac: 02:98:c5:36:39:7b
         ip: 192.168.100.230
         name: hussws03
+      - ip: 192.168.100.244
+        mac: 56:6f:b7:44:00:03
+        name: casc-rhev
+      - ip: 192.168.100.3
+        mac: 00:15:5d:01:fa:ff
+        name: hussdc01
+      - ip: 192.168.100.14
+        mac: 00:20:85:e1:58:83
+        name: hussups01
+      - ip: 192.168.100.25
+        mac: 00:15:5d:01:fa:07
+        name: identity
+      - ip: 192.168.100.110
+        mac: 24:5e:be:49:f6:26
+        name: nas
+      - ip: 192.168.100.24
+        mac: 56:6f:b7:44:00:08
+        name: replica1
+      - ip: 192.168.100.26
+        mac: 56:6f:b7:44:00:00
+        name: satellite
+      - ip: 192.168.100.27
+        mac: 56:6f:b7:44:00:0d
+        name: tower
+      - ip: 192.168.100.8
+        mac: 00:15:5d:01:fa:03
+        name: unifi
   - name: hypervisors
     hosts:
-      - mac: c6:e7:b1:e1:54:48
-        ip: 172.18.0.13
+      - ip: 172.18.0.8
+        mac: 00:16:3e:2d:ac:05
+        name: rhvm
+      - ip: 172.18.0.10
+        mac: 44:1e:a1:4e:8e:2c
+        name: node1
+      - ip: 172.18.0.11
+        mac: 98:4b:e1:7a:25:68
+        name: node2
+      - ip: 172.18.0.12
+        mac: e4:11:5b:d6:68:f8
+        name: node3
+      - ip: 172.18.0.13
+        mac: 40:16:7e:35:c4:66
         name: node4
+      - ip: 172.18.0.5
+        mac: 00:16:3e:75:05:5c
+        name: misc
+  - name: clients
+    hosts:
+      - ip: 192.168.103.254
+        mac: 0c:cf:89:31:a9:82
+        name: airtouch-downstairs
+      - ip: 192.168.103.253
+        mac: 0c:cf:89:31:2d:9e
+        name: airtouch-upstairs
+      - ip: 192.168.103.80
+        mac: 6c:71:d9:f2:2e:f6
+        name: hussws01
+      - ip: 192.168.103.133
+        mac: a4:97:b1:dc:74:63
+        name: LA327783
+  - name: dmz
+    hosts:
+      - ip: 192.168.102.244
+        mac: 56:6f:b7:44:00:02
+        name: casm
+      - ip: 192.168.102.10
+        mac: 00:15:5d:01:fa:02
+        name: husspxb01
+      - ip: 192.168.102.3
+        mac: 00:15:5d:01:fa:01
+        name: hussws02
+  - name: oobm
+    hosts:
+      - ip: 10.0.1.10
+        mac: 44:1e:a1:48:40:2c
+        name: ilonode1
+      - ip: 10.0.1.11
+        mac: b4:99:ba:ff:24:7c
+        name: ilonode2
+      - ip: 10.0.1.12
+        mac: e4:11:5b:d5:e3:cc
+        name: ilonode3
+  - name: vms
+    hosts:
+      - ip: 10.10.255.250
+        mac: 56:6f:b7:44:00:07
+        name: messaging
+

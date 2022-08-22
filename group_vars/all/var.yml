@@ -29,13 +29,28 @@ subnets:
       l3_interface: irb.1
     security_zones:
       - lan-trusted
-    virtual_router: lan-trusted
+    virtual_router: lan-vr
     allowed_ribs:
-      - services
-      - security
-      - vms
-      - hypervisors
-      - clients
+      - dmz-vr
+# Guest VLAN
+  - network_address: 192.168.10
+    mask: 24
+    dhcp_start: 192.168.10.10
+    dhcp_end: 192.168.10.254
+    domain_name: local
+    name_servers:
+      - 1.1.1.1
+    gateway: 192.168.10.1
+    last_ip: 192.168.10.254
+    lease_time: 3600
+    name: guest
+    vlan:
+      tag: guest
+      id: 10
+      l3_interface: irb.10
+    security_zones:
+      - guest-untrusted
+    virtual_router: guest-vr
 # Services
   - network_address: 192.168.100
     mask: 24
@@ -43,10 +58,9 @@ subnets:
     dhcp_end: 192.168.100.254
     domain_name: hussdogg.com
     name_servers:
-      - 1.1.1.1
-#      - 192.168.100.25
-#      - 192.168.100.3
-#      - 192.168.100.24
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
     gateway: 192.168.100.1
     last_ip: 192.168.100.254
     lease_time: 3600
@@ -57,14 +71,9 @@ subnets:
       l3_interface: irb.100
     security_zones:
       - lan-trusted
-    virtual_router: lan-trusted
+    virtual_router: lan-vr
     allowed_ribs:
-      - security
-      - vms
-      - hypervisors
-      - dmz
-      - misc
-      - clients
+      - dmz-vr
 # Security
   - network_address: 192.168.101
     mask: 24
@@ -72,10 +81,9 @@ subnets:
     dhcp_end: 192.168.101.254
     domain_name: hussdogg.com
     name_servers:
-      - 1.1.1.1
-#      - 192.168.100.25
-#      - 192.168.100.3
-#      - 192.168.100.24
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
     gateway: 192.168.101.1
     last_ip: 192.168.101.254
     lease_time: 3600
@@ -86,12 +94,7 @@ subnets:
       l3_interface: irb.101
     security_zones:
       - lan-trusted
-    virtual_router: lan-trusted
-    allowed_ribs:
-      - services
-      - vms
-      - hypervisors
-      - clients
+    virtual_router: lan-vr
 # DMZ
   - network_address: 192.168.102
     mask: 24
@@ -99,10 +102,9 @@ subnets:
     dhcp_end: 192.168.102.254
     domain_name: hussdogg.com
     name_servers:
-      - 1.1.1.1
-#      - 192.168.100.25
-#      - 192.168.100.3
-#      - 192.168.100.24
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
     gateway: 192.168.102.1
     last_ip: 192.168.102.254
     lease_time: 3600
@@ -112,13 +114,10 @@ subnets:
       id: 102
       l3_interface: irb.102
     security_zones:
-      - lan-trusted
-    virtual_router: lan-trusted
+      - dmz-untrusted
+    virtual_router: dmz-vr
     allowed_ribs:
-      - services
-      - vms
-      - misc
-      - clients
+      - lan-vr
 # Clients
   - network_address: 192.168.103
     mask: 24
@@ -126,10 +125,9 @@ subnets:
     dhcp_end: 192.168.103.254
     domain_name: hussdogg.com
     name_servers:
-      - 1.1.1.1
-#      - 192.168.100.25
-#      - 192.168.100.3
-#      - 192.168.100.24
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
     gateway: 192.168.103.1
     last_ip: 192.168.103.254
     lease_time: 3600
@@ -140,14 +138,7 @@ subnets:
       l3_interface: irb.103
     security_zones:
       - lan-trusted
-    virtual_router: lan-trusted
-    allowed_ribs:
-      - services
-      - vms
-      - hypervisors
-      - dmz
-      - misc
-      - clients
+    virtual_router: lan-vr
 # VMs
   - network_address: 10.10.0
     mask: 16
@@ -155,54 +146,62 @@ subnets:
     dhcp_end: 10.10.255.254
     domain_name: hussdogg.com
     name_servers:
-      - 1.1.1.1
-#      - 192.168.100.25
-#      - 192.168.100.3
-#      - 192.168.100.24
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
     gateway: 10.10.0.1
     last_ip: 10.10.255.254
     lease_time: 3600
     name: vms
     vlan:
       tag: vms
-      id: 300
-      l3_interface: irb.300
-    security_zones:
-      - lan-trusted
-    virtual_router: lan-trusted
-    allowed_ribs:
-      - services
-      - vms
-      - hypervisors
-      - dmz
-      - misc
-      - clients
-# Hypervisors
-  - network_address: 172.18.0
-    mask: 16
-    dhcp_start: 172.18.0.10
-    dhcp_end: 172.18.255.254
-    domain_name: hussdogg.com
-    name_servers:
-      - 1.1.1.1
-#      - 192.168.100.25
-#      - 192.168.100.3
-#      - 192.168.100.24
-    gateway: 172.18.0.1
-    last_ip: 172.18.255.254
-    lease_time: 3600
-    name: hypervisors
-    vlan:
-      tag: hypervisors
       id: 350
       l3_interface: irb.350
     security_zones:
       - lan-trusted
-    virtual_router: lan-trusted
+    virtual_router: lan-vr
     allowed_ribs:
-      - services
-      - vms
-      - hypervisors
-      - dmz
-      - misc
-      - clients
+      - dmz-vr
+# Hypervisors
+  - network_address: 172.18.0
+    mask: 24
+    dhcp_start: 172.18.0.10
+    dhcp_end: 172.18.0.254
+    domain_name: k8s.idm.hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+      - 1.1.1.1
+    gateway: 172.18.0.1
+    last_ip: 172.18.0.254
+    lease_time: 3600
+    name: hypervisors
+    vlan:
+      tag: hypervisors
+      id: 300
+      l3_interface: irb.300
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+# Out of Band Management
+  - network_address: 10.0.1
+    mask: 24
+    dhcp_start: 10.0.1.10
+    dhcp_end: 10.0.1.254
+    domain_name: hussdogg.com
+    name_servers:
+      - 192.168.100.25
+      - 192.168.100.3
+      - 192.168.100.24
+    gateway: 10.0.1.1
+    last_ip: 10.0.1.254
+    lease_time: 3600
+    name: oobm
+    vlan:
+      tag: oobm
+      id: 500
+      l3_interface: irb.500
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
