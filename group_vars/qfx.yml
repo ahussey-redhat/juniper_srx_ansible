@@ -26,6 +26,7 @@ lan_interfaces:
     virtual_router: lan-trusted
     rstp: true
     native_vlan_id: 1
+    vlan_mode: trunk
 # UniFi switch (temporary)
   - name: ge-1/0/38
     vlans:
@@ -38,81 +39,75 @@ lan_interfaces:
     virtual_router: lan-trusted
     rstp: true
     native_vlan_id: 1
+    vlan_mode: trunk
 # Hypervisors
   # node1
   - name: ge-0/0/6
     vlans:
-      - 1
       - 300
     virtual_router: lan-trusted
-    native_vlan_id: 1
+    vlan_mode: trunk
   - name: ae3
     vlans:
-      - 1
       - 100
       - 102
       - 103
       - 350
     virtual_router: lan-trusted
-    native_vlan_id: 1
     members:
       - ge-1/0/6
       - ge-0/0/8
       - ge-1/0/8
+    vlan_mode: trunk
   # node2
   - name: ge-0/0/10
     vlans:
-      - 1
       - 300
     virtual_router: lan-trusted
-    native_vlan_id: 1
+    vlan_mode: trunk
   - name: ae4
     vlans:
-      - 1
       - 100
       - 102
       - 103
       - 350
     virtual_router: lan-trusted
-    native_vlan_id: 1
     members:
       - ge-1/0/10
       - ge-0/0/12
       - ge-0/0/12
+    vlan_mode: trunk
   # node3
   - name: ge-0/0/14
     vlans:
-      - 1
       - 300
     virtual_router: lan-trusted
-    native_vlan_id: 1
+    vlan_mode: trunk
   - name: ae5
     vlans:
-      - 1
       - 100
       - 102
       - 103
       - 350
     virtual_router: lan-trusted
-    native_vlan_id: 1
     members:
       - ge-1/0/14
       - ge-0/0/16
       - ge-1/0/16
+    vlan_mode: trunk
   # node4
   - name: ae6
     vlans:
-      - 1
       - 100
       - 102
       - 103
       - 300
       - 350
     virtual_router: lan-trusted
-    native_vlan_id: 1
     members:
       - ge-0/0/18
       - ge-1/0/18
+    vlan_mode: trunk
 # NAS
   - name: ae7
     vlans:
@@ -126,5 +121,6 @@ lan_interfaces:
       - ge-1/0/20
       - ge-0/0/22
       - ge-1/0/22
+    vlan_mode: trunk
 
 

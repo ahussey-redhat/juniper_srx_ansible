@@ -63,9 +63,16 @@ set interfaces {{ member }} ether-options 802.3ad {{ interface.name }}
 {% endfor %}
 {% endif %}
 {% if interface.vlans is defined %}
-set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
+{% if interface.vlan_mode == "trunk" %}
 set interfaces {{ interface.name }} vlan-tagging
-set interfaces {{ interface.name }} native-vlan-id {{ interface.native_vlan_id | default(1) }}
+set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
+{% if interface.native_vlan_id is defined %}
+set interfaces {{ interface.name }} native-vlan-id {{ interface.native_vlan_id }}
+{% endif %}
+{% endif %}
+{% if interface.vlan_mode == "access" %}
+set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode access
+{% endif %}
 {% for vlan in interface.vlans %}
 {% for subnet in subnets %}
 {% if vlan == subnet.vlan.id %}
