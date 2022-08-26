@@ -129,6 +129,16 @@ set security policies global policy alternate-isp-untrusted-to-lan-trusted match
 set security policies global policy alternate-isp-untrusted-to-lan-trusted match from-zone alternate-isp-untrusted to-zone lan-trusted application any
 set security policies global policy alternate-isp-untrusted-to-lan-trusted then permit
 
+set security policies global policy dmz-untrusted-to-lan-trusted match from-zone dmz-untrusted to-zone lan-trusted source-address any
+set security policies global policy dmz-untrusted-to-lan-trusted match from-zone dmz-untrusted to-zone lan-trusted destination-address any
+set security policies global policy dmz-untrusted-to-lan-trusted match from-zone dmz-untrusted to-zone lan-trusted application any
+set security policies global policy dmz-untrusted-to-lan-trusted then permit
+
+set security policies global policy lan-trusted-to-dmz-untrusted match from-zone lan-trusted to-zone dmz-untrusted source-address any
+set security policies global policy lan-trusted-to-dmz-untrusted match from-zone lan-trusted to-zone dmz-untrusted destination-address any
+set security policies global policy lan-trusted-to-dmz-untrusted match from-zone lan-trusted to-zone dmz-untrusted application any
+set security policies global policy lan-trusted-to-dmz-untrusted then permit
+
 {# configure virtual-routers for each subnet #}
 {% for subnet in subnets %}
 {% for router in virtual_routers %}

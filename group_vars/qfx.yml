@@ -47,6 +47,7 @@ lan_interfaces:
       - 300
     virtual_router: lan-trusted
     vlan_mode: trunk
+    native_vlan_id: 300
   - name: ae3
     vlans:
       - 100
@@ -65,6 +66,7 @@ lan_interfaces:
       - 300
     virtual_router: lan-trusted
     vlan_mode: trunk
+    native_vlan_id: 300
   - name: ae4
     vlans:
       - 100
@@ -83,6 +85,7 @@ lan_interfaces:
       - 300
     virtual_router: lan-trusted
     vlan_mode: trunk
+    native_vlan_id: 300
   - name: ae5
     vlans:
       - 100
@@ -97,6 +100,7 @@ lan_interfaces:
     vlan_mode: trunk
   # node4
   - name: ae6
+    native_vlan_id: 300
     vlans:
       - 100
       - 102
