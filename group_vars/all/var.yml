@@ -160,10 +160,9 @@ subnets:
     mask: 24
     dhcp_start: 172.18.0.10
     dhcp_end: 172.18.0.254
-    domain_name: k8s.idm.hussdogg.com
+    domain_name: prod.local
     name_servers:
-      - 8.8.8.8
-      - 8.8.4.4
+      - 172.18.0.1
     gateway: 172.18.0.1
     last_ip: 172.18.0.254
     lease_time: 3600
@@ -180,7 +179,7 @@ subnets:
     mask: 24
     dhcp_start: 10.0.1.10
     dhcp_end: 10.0.1.254
-    domain_name: hussdogg.com
+    domain_name: prod.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4

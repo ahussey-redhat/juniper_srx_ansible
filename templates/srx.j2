@@ -9,8 +9,8 @@ set system name-server {{ name_server }}
 {% endfor %}
 set system ntp server 203.57.51.100 prefer routing-instance lan-vr
 set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
-set system services dns forwarders 8.8.8.8
-set system services dns forwarders 8.8.4.4
+set system services dns dns-proxy default-domain * forwarders 8.8.8.8
+set system services dns dns-proxy default-domain * forwarders 8.8.4.4
 
 {# configure services #}
 set system services web-management http interface {{ webinterface }}
