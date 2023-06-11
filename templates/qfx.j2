@@ -5,6 +5,11 @@ set system name-server {{ name_server }}
 {% endfor %}
 {# set chassis auto-image-upgrade #}
 
+set protocols l2-learning global-mac-table-aging-time 120
+set protocols lldp interface all
+set protocols lldp-med interface all
+set protocols igmp-snooping vlan default
+
 {# configure virtual chassis #}
 set virtual-chassis preprovisioned
 {% for chassis in qfx_chassis %}
@@ -25,7 +30,9 @@ set vlans {{ subnet.vlan.tag }} vlan-id {{ subnet.vlan.id }}
 #}
 set chassis aggregated-devices ethernet device-count 16
 
-{% for interface in aggregated_ethernet_interfaces %}
+delete interfaces
+
+{% for interface in upstream_aggregated_ethernet_interfaces %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching interface-mode trunk
 set interfaces {{ interface.name }} vlan-tagging
 set interfaces {{ interface.name }} native-vlan-id 1
@@ -34,20 +41,15 @@ set interfaces {{ interface.name }} aggregated-ether-options lacp periodic slow
 {#
 set interfaces {{ interface.name }} gratuitous-arp-reply
 #}
-set protocols rstp interface {{ interface.name }}
 {% for member in interface.members %}
 set interfaces {{ member }} ether-options 802.3ad {{ interface.name }}
 {% endfor %}
 {% for subnet in subnets %}
 set interfaces {{ interface.name }} unit 0 family ethernet-switching vlan members {{ subnet.vlan.tag }}
 {% endfor %}
-
+set protocols rstp interface {{ interface.name }}
 {% endfor %}
 
-set protocols l2-learning global-mac-table-aging-time 120
-set protocols lldp interface all
-set protocols lldp-med interface all
-set protocols igmp-snooping vlan default
 
 {# configure LAN interfaces #}
 {% for interface in lan_interfaces %}

@@ -1,5 +1,5 @@
 ---
-aggregated_ethernet_interfaces:
+upstream_aggregated_ethernet_interfaces:
   - name: ae1
     members:
       - ge-0/0/40
@@ -11,24 +11,14 @@ aggregated_ethernet_interfaces:
 qfx_chassis:
   - serial: DC753-C
     member: 0
-  - serial: P8056-C
+  - serial: X4085-C
     member: 1
 virtual_routers:
   - dmz-untrusted
   - lan-trusted
 lan_interfaces:
-# Cisco switch in media rack
-  - name: ge-0/0/38
-    vlans:
-      - 1
-      - 100
-      - 103
-    virtual_router: lan-trusted
-    rstp: true
-    native_vlan_id: 1
-    vlan_mode: trunk
 # UniFi switch (temporary)
-  - name: ge-1/0/38
+  - name: ge-0/0/36
     vlans:
       - 1
       - 100
@@ -56,9 +46,9 @@ lan_interfaces:
       - 350
     virtual_router: lan-trusted
     members:
-      - ge-1/0/6
+      - ge-0/0/7
       - ge-0/0/8
-      - ge-1/0/8
+      - ge-0/0/9
     vlan_mode: trunk
   # node2
   - name: ge-0/0/10
@@ -75,9 +65,9 @@ lan_interfaces:
       - 350
     virtual_router: lan-trusted
     members:
-      - ge-1/0/10
+      - ge-0/0/11
       - ge-0/0/12
-      - ge-0/0/12
+      - ge-0/0/13
     vlan_mode: trunk
   # node3
   - name: ge-0/0/14
@@ -94,9 +84,9 @@ lan_interfaces:
       - 350
     virtual_router: lan-trusted
     members:
-      - ge-1/0/14
+      - ge-0/0/15
       - ge-0/0/16
-      - ge-1/0/16
+      - ge-0/0/17
     vlan_mode: trunk
   # node4
   - name: ae6
@@ -110,7 +100,7 @@ lan_interfaces:
     virtual_router: lan-trusted
     members:
       - ge-0/0/18
-      - ge-1/0/18
+      - ge-0/0/19
     vlan_mode: trunk
 # NAS
   - name: ae7
@@ -122,9 +112,25 @@ lan_interfaces:
     native_vlan_id: 1
     members:
       - ge-0/0/20
-      - ge-1/0/20
+      - ge-0/0/21
       - ge-0/0/22
-      - ge-1/0/22
+      - ge-0/0/23
     vlan_mode: trunk
+# Cisco switch in media rack
+  - name: ae8
+    vlans:
+      - 1
+      - 100
+      - 102
+      - 103
+      - 300
+      - 350
+    virtual_router: lan-trusted
+    rstp: true
+    native_vlan_id: 1
+    vlan_mode: trunk
+    members:
+      - ge-0/0/38
+      - ge-0/0/39
 
 

@@ -3,8 +3,8 @@ all:
   children:
     srx:
       hosts:
-        hussfw01:
-        hussfw02:
+        hussfw01_0:
+        hussfw01_1:
     qfx:
       hosts:
         husssw01_0:

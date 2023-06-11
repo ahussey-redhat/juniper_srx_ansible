@@ -2,6 +2,7 @@
 - name: Bootstrap a JUNOS network device
   hosts: qfx
   become: true
+  connection: local
   gather_facts: false
   tasks:
     - name: Retrieve current configuration to allow rollback

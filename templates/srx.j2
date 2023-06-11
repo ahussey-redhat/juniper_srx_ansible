@@ -9,6 +9,8 @@ set system name-server {{ name_server }}
 {% endfor %}
 set system ntp server 203.57.51.100 prefer routing-instance lan-vr
 set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
+set system services dns forwarders 8.8.8.8
+set system services dns forwarders 8.8.4.4
 
 {# configure services #}
 set system services web-management http interface {{ webinterface }}
@@ -16,7 +18,7 @@ set system services web-management https interface {{ webinterface }}
 set system services web-management https system-generated-certificate
 
 {# configure redundant ethernet #}
-set chassis cluster reth-count 3
+set chassis cluster reth-count 4
 {# LAN reth #}
 set chassis cluster redundancy-group 1 node 0 priority 1
 set chassis cluster redundancy-group 1 node 1 priority 1
@@ -27,6 +29,7 @@ set interfaces reth0 redundant-ether-options lacp periodic slow
 set interfaces reth0 flexible-vlan-tagging
 set interfaces reth0 native-vlan-id 1
 set interfaces reth0 promiscuous-mode
+
 {# WAN reth #}
 {# Primary WAN #}
 set chassis cluster redundancy-group 2 node 0 priority 1
@@ -94,6 +97,7 @@ set security policies global policy {{ zone.name }}-to-{{ wan_security_zone.name
 {% endfor %}
 
 {% for subnet in subnets %}
+set system services dns dns-proxy interface reth0.{{ subnet.vlan.id }}
 {% if zone.name in subnet.security_zones %}
 set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan.id }}
 set interfaces reth0 unit {{ subnet.vlan.id }} family inet address {{ subnet.gateway }}/{{ subnet.mask }}
@@ -167,6 +171,7 @@ set routing-options rib-groups {{ router.name }} import-rib {{ router.name }}.in
 set policy-options policy-statement allowed-to-{{ router.name }} term t{{count.value}} from instance {{ rib }}
 set policy-options policy-statement allowed-to-{{ router.name }} term t{{count.value}} then accept
 set routing-options rib-groups {{ router.name }} import-rib {{ rib }}.inet.0
+set routing-instances {{ router.name }} routing-options instance-import allowed-to-{{ router.name }}
 {% set count.value = count.value +1 %}
 {% endfor %}
 {% endif %}

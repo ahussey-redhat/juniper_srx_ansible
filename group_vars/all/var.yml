@@ -1,11 +1,9 @@
 ---
 ansible_connection: local
-#ansible_connection: juniper.device.pyez
 mode: serial
 user: root
 host: hussws03.idm.hussdogg.com
 passwd: "{{ junos_password }}"
-#cs_user: alex@HUSSDOGG.com
 system_name_servers:
   - 1.1.1.1
 subnets:
@@ -16,9 +14,8 @@ subnets:
     dhcp_end: 192.168.1.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 192.168.1.1
     last_ip: 192.168.1.254
     lease_time: 3600
@@ -39,7 +36,8 @@ subnets:
     dhcp_end: 192.168.10.254
     domain_name: local
     name_servers:
-      - 1.1.1.1
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 192.168.10.1
     last_ip: 192.168.10.254
     lease_time: 3600
@@ -58,9 +56,8 @@ subnets:
     dhcp_end: 192.168.100.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 192.168.100.1
     last_ip: 192.168.100.254
     lease_time: 3600
@@ -81,9 +78,8 @@ subnets:
     dhcp_end: 192.168.101.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 192.168.101.1
     last_ip: 192.168.101.254
     lease_time: 3600
@@ -102,9 +98,8 @@ subnets:
     dhcp_end: 192.168.102.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.25
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 192.168.102.1
     last_ip: 192.168.102.254
     lease_time: 3600
@@ -125,9 +120,8 @@ subnets:
     dhcp_end: 192.168.103.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 1.1.1.1
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 192.168.103.1
     last_ip: 192.168.103.254
     lease_time: 3600
@@ -146,9 +140,8 @@ subnets:
     dhcp_end: 10.10.255.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 10.10.0.1
     last_ip: 10.10.255.254
     lease_time: 3600
@@ -169,9 +162,8 @@ subnets:
     dhcp_end: 172.18.0.254
     domain_name: k8s.idm.hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 172.18.0.1
     last_ip: 172.18.0.254
     lease_time: 3600
@@ -190,9 +182,8 @@ subnets:
     dhcp_end: 10.0.1.254
     domain_name: hussdogg.com
     name_servers:
-      - 192.168.100.25
-      - 192.168.100.3
-      - 192.168.100.24
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 10.0.1.1
     last_ip: 10.0.1.254
     lease_time: 3600
