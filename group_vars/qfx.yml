@@ -88,7 +88,7 @@ lan_interfaces:
       - ge-0/0/16
       - ge-0/0/17
     vlan_mode: trunk
-  # node4
+  # node4 - UNUSED!!
   - name: ae6
     native_vlan_id: 300
     vlans:
@@ -116,6 +116,12 @@ lan_interfaces:
       - ge-0/0/22
       - ge-0/0/23
     vlan_mode: trunk
+# Laptop
+  - name: ge-0/0/24
+    vlans:
+      - 300
+    virtual_router: lan-trusted
+    vlan_mode: access
 # Cisco switch in media rack
   - name: ae8
     vlans:

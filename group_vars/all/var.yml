@@ -162,7 +162,8 @@ subnets:
     dhcp_end: 172.18.0.254
     domain_name: prod.local
     name_servers:
-      - 172.18.0.1
+      - 8.8.8.8
+      - 8.8.4.4
     gateway: 172.18.0.1
     last_ip: 172.18.0.254
     lease_time: 3600
