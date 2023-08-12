@@ -34,15 +34,16 @@ lan_interfaces:
   # node1
   - name: ge-0/0/6
     vlans:
-      - 300
+      - 316
     virtual_router: lan-trusted
     vlan_mode: trunk
-    native_vlan_id: 300
+    native_vlan_id: 316
   - name: ae3
     vlans:
       - 100
       - 102
       - 103
+      - 300
       - 350
     virtual_router: lan-trusted
     members:
@@ -53,15 +54,16 @@ lan_interfaces:
   # node2
   - name: ge-0/0/10
     vlans:
-      - 300
+      - 316
     virtual_router: lan-trusted
     vlan_mode: trunk
-    native_vlan_id: 300
+    native_vlan_id: 316
   - name: ae4
     vlans:
       - 100
       - 102
       - 103
+      - 300
       - 350
     virtual_router: lan-trusted
     members:
@@ -72,15 +74,16 @@ lan_interfaces:
   # node3
   - name: ge-0/0/14
     vlans:
-      - 300
+      - 316
     virtual_router: lan-trusted
     vlan_mode: trunk
-    native_vlan_id: 300
+    native_vlan_id: 316
   - name: ae5
     vlans:
       - 100
       - 102
       - 103
+      - 300
       - 350
     virtual_router: lan-trusted
     members:
@@ -118,10 +121,12 @@ lan_interfaces:
     vlan_mode: trunk
 # Laptop
   - name: ge-0/0/24
+    native_vlan_id: 300
     vlans:
       - 300
+      - 316
     virtual_router: lan-trusted
-    vlan_mode: access
+    vlan_mode: trunk
 # Cisco switch in media rack
   - name: ae8
     vlans:

@@ -2,7 +2,7 @@
 ansible_connection: local
 mode: serial
 user: root
-host: hussws03.idm.hussdogg.com
+host: localhost
 passwd: "{{ junos_password }}"
 system_name_servers:
   - 1.1.1.1
@@ -12,7 +12,7 @@ subnets:
     mask: 24
     dhcp_start: 192.168.1.10
     dhcp_end: 192.168.1.254
-    domain_name: hussdogg.com
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -34,7 +34,7 @@ subnets:
     mask: 24
     dhcp_start: 192.168.10.10
     dhcp_end: 192.168.10.254
-    domain_name: local
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -54,7 +54,7 @@ subnets:
     mask: 24
     dhcp_start: 192.168.100.10
     dhcp_end: 192.168.100.254
-    domain_name: hussdogg.com
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -76,7 +76,7 @@ subnets:
     mask: 24
     dhcp_start: 192.168.101.10
     dhcp_end: 192.168.101.254
-    domain_name: hussdogg.com
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -96,7 +96,7 @@ subnets:
     mask: 24
     dhcp_start: 192.168.102.10
     dhcp_end: 192.168.102.254
-    domain_name: hussdogg.com
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -118,7 +118,7 @@ subnets:
     mask: 24
     dhcp_start: 192.168.103.10
     dhcp_end: 192.168.103.254
-    domain_name: hussdogg.com
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -138,10 +138,9 @@ subnets:
     mask: 16
     dhcp_start: 10.10.0.10
     dhcp_end: 10.10.255.254
-    domain_name: hussdogg.com
+    domain_name: lab.local
     name_servers:
-      - 8.8.8.8
-      - 8.8.4.4
+      - 172.18.0.17
     gateway: 10.10.0.1
     last_ip: 10.10.255.254
     lease_time: 3600
@@ -160,10 +159,9 @@ subnets:
     mask: 24
     dhcp_start: 172.18.0.10
     dhcp_end: 172.18.0.254
-    domain_name: prod.local
+    domain_name: lab.local
     name_servers:
-      - 8.8.8.8
-      - 8.8.4.4
+      - 172.18.0.17
     gateway: 172.18.0.1
     last_ip: 172.18.0.254
     lease_time: 3600
@@ -175,12 +173,31 @@ subnets:
     security_zones:
       - lan-trusted
     virtual_router: lan-vr
+# Provisioning
+  - network_address: 172.16.0
+    mask: 24
+    dhcp_start: 172.16.0.10
+    dhcp_end: 172.16.0.254
+    domain_name: lab.local
+    name_servers:
+      - 172.18.0.17
+    gateway: 172.16.0.1
+    last_ip: 172.16.0.254
+    lease_time: 3600
+    name: provisioning
+    vlan:
+      tag: provisioning
+      id: 316
+      l3_interface: irb.316
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
 # Out of Band Management
   - network_address: 10.0.1
     mask: 24
     dhcp_start: 10.0.1.10
     dhcp_end: 10.0.1.254
-    domain_name: prod.local
+    domain_name: lab.local
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
