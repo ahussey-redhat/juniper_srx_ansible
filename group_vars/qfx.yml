@@ -22,9 +22,7 @@ lan_interfaces:
     vlans:
       - 1
       - 100
-      - 102
       - 103
-      - 300
       - 500
     virtual_router: lan-trusted
     rstp: true
