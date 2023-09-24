@@ -25,7 +25,7 @@ lan_interfaces:
       - 102
       - 103
       - 300
-      - 350
+      - 500
     virtual_router: lan-trusted
     rstp: true
     native_vlan_id: 1
@@ -123,6 +123,7 @@ lan_interfaces:
   - name: ge-0/0/24
     native_vlan_id: 300
     vlans:
+      - 100
       - 300
       - 316
     virtual_router: lan-trusted

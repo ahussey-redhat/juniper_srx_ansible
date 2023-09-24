@@ -59,8 +59,7 @@ subnets:
     dhcp_end: 192.168.100.254
     domain_name: lab.local
     name_servers:
-      - 8.8.8.8
-      - 8.8.4.4
+      - 172.18.0.20
     gateway: 192.168.100.1
     last_ip: 192.168.100.254
     lease_time: 3600
@@ -82,8 +81,7 @@ subnets:
     dhcp_end: 192.168.101.254
     domain_name: lab.local
     name_servers:
-      - 8.8.8.8
-      - 8.8.4.4
+      - 172.18.0.20
     gateway: 192.168.101.1
     last_ip: 192.168.101.254
     lease_time: 3600
@@ -169,7 +167,7 @@ subnets:
     dhcp_end: 172.18.0.254
     domain_name: lab.local
     name_servers:
-      - 1.1.1.1
+      - 172.18.0.20
     gateway: 172.18.0.1
     last_ip: 172.18.0.254
     lease_time: 3600
@@ -186,7 +184,7 @@ subnets:
     mask: 24
     domain_name: lab.local
     name_servers:
-      - 1.1.1.1
+      - 172.18.0.20
     gateway: 172.16.0.1
     last_ip: 172.16.0.254
     lease_time: 3600
