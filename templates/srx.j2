@@ -146,7 +146,9 @@ set security policies global policy lan-trusted-to-dmz-untrusted then permit
 {# configure virtual-routers for each subnet #}
 {% for subnet in subnets %}
 {% for router in virtual_routers %}
-{% if router.name in subnet.virtual_router%}
+{% if router.name in subnet.virtual_router %}
+
+{% if subnet.dhcp_enabled is defined %}
 {# configure DHCP for each subnet #}
 set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet network {{ subnet.gateway }}/{{ subnet.mask }}
 set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope low {{ subnet.dhcp_start }}
@@ -157,6 +159,7 @@ set routing-instances {{ router.name }} access address-assignment pool {{ subnet
 {% endfor %}
 set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.gateway }}
 set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes maximum-lease-time {{ subnet.lease_time }}
+{% endif %}
 
 {# configure VLANs for each subnet #}
 set routing-instances {{ router.name }} instance-type virtual-router

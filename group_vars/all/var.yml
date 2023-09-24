@@ -10,6 +10,7 @@ subnets:
 # Native VLAN
   - network_address: 192.168.1
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 192.168.1.10
     dhcp_end: 192.168.1.254
     domain_name: lab.local
@@ -32,6 +33,7 @@ subnets:
 # Guest VLAN
   - network_address: 192.168.10
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 192.168.10.10
     dhcp_end: 192.168.10.254
     domain_name: lab.local
@@ -52,6 +54,7 @@ subnets:
 # Services
   - network_address: 192.168.100
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 192.168.100.10
     dhcp_end: 192.168.100.254
     domain_name: lab.local
@@ -74,6 +77,7 @@ subnets:
 # Security
   - network_address: 192.168.101
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 192.168.101.10
     dhcp_end: 192.168.101.254
     domain_name: lab.local
@@ -94,6 +98,7 @@ subnets:
 # DMZ
   - network_address: 192.168.102
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 192.168.102.10
     dhcp_end: 192.168.102.254
     domain_name: lab.local
@@ -116,6 +121,7 @@ subnets:
 # Clients
   - network_address: 192.168.103
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 192.168.103.10
     dhcp_end: 192.168.103.254
     domain_name: lab.local
@@ -136,11 +142,12 @@ subnets:
 # VMs
   - network_address: 10.10.0
     mask: 16
+    dhcp_enabled: true
     dhcp_start: 10.10.0.10
     dhcp_end: 10.10.255.254
     domain_name: lab.local
     name_servers:
-      - 172.18.0.17
+      - 1.1.1.1
     gateway: 10.10.0.1
     last_ip: 10.10.255.254
     lease_time: 3600
@@ -157,11 +164,12 @@ subnets:
 # Hypervisors
   - network_address: 172.18.0
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 172.18.0.10
     dhcp_end: 172.18.0.254
     domain_name: lab.local
     name_servers:
-      - 172.18.0.17
+      - 1.1.1.1
     gateway: 172.18.0.1
     last_ip: 172.18.0.254
     lease_time: 3600
@@ -176,11 +184,9 @@ subnets:
 # Provisioning
   - network_address: 172.16.0
     mask: 24
-    dhcp_start: 172.16.0.10
-    dhcp_end: 172.16.0.254
     domain_name: lab.local
     name_servers:
-      - 172.18.0.17
+      - 1.1.1.1
     gateway: 172.16.0.1
     last_ip: 172.16.0.254
     lease_time: 3600
@@ -195,6 +201,7 @@ subnets:
 # Out of Band Management
   - network_address: 10.0.1
     mask: 24
+    dhcp_enabled: true
     dhcp_start: 10.0.1.10
     dhcp_end: 10.0.1.254
     domain_name: lab.local
