@@ -1,0 +1,5 @@
+---
+node_id: 1
+host_name: hussfw01
+domain_name: hussdogg.com
+port: /dev/ttyUSB1

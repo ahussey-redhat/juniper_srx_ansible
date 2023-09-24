@@ -1,0 +1,1 @@
+# This directory is required for successful Ansible runs

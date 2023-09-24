@@ -1,0 +1,221 @@
+---
+ansible_connection: local
+mode: serial
+user: root
+host: localhost
+passwd: "{{ junos_password }}"
+system_name_servers:
+  - 1.1.1.1
+subnets:
+# Native VLAN
+  - network_address: 192.168.1
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 192.168.1.10
+    dhcp_end: 192.168.1.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 192.168.1.1
+    last_ip: 192.168.1.254
+    lease_time: 3600
+    name: misc
+    vlan:
+      tag: misc
+      id: 1
+      l3_interface: irb.1
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+    allowed_ribs:
+      - dmz-vr
+# Guest VLAN
+  - network_address: 192.168.10
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 192.168.10.10
+    dhcp_end: 192.168.10.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 192.168.10.1
+    last_ip: 192.168.10.254
+    lease_time: 3600
+    name: guest
+    vlan:
+      tag: guest
+      id: 10
+      l3_interface: irb.10
+    security_zones:
+      - guest-untrusted
+    virtual_router: guest-vr
+# Services
+  - network_address: 192.168.100
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 192.168.100.10
+    dhcp_end: 192.168.100.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 192.168.100.1
+    last_ip: 192.168.100.254
+    lease_time: 3600
+    name: services
+    vlan:
+      tag: services
+      id: 100
+      l3_interface: irb.100
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+    allowed_ribs:
+      - dmz-vr
+# Security
+  - network_address: 192.168.101
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 192.168.101.10
+    dhcp_end: 192.168.101.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 192.168.101.1
+    last_ip: 192.168.101.254
+    lease_time: 3600
+    name: security
+    vlan:
+      tag: security
+      id: 101
+      l3_interface: irb.101
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+# DMZ
+  - network_address: 192.168.102
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 192.168.102.10
+    dhcp_end: 192.168.102.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 192.168.102.1
+    last_ip: 192.168.102.254
+    lease_time: 3600
+    name: dmz
+    vlan:
+      tag: dmz
+      id: 102
+      l3_interface: irb.102
+    security_zones:
+      - dmz-untrusted
+    virtual_router: dmz-vr
+    allowed_ribs:
+      - lan-vr
+# Clients
+  - network_address: 192.168.103
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 192.168.103.10
+    dhcp_end: 192.168.103.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 192.168.103.1
+    last_ip: 192.168.103.254
+    lease_time: 3600
+    name: clients
+    vlan:
+      tag: clients
+      id: 103
+      l3_interface: irb.103
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+# VMs
+  - network_address: 10.10.0
+    mask: 16
+    dhcp_enabled: true
+    dhcp_start: 10.10.0.10
+    dhcp_end: 10.10.255.254
+    domain_name: lab.local
+    name_servers:
+      - 1.1.1.1
+    gateway: 10.10.0.1
+    last_ip: 10.10.255.254
+    lease_time: 3600
+    name: vms
+    vlan:
+      tag: vms
+      id: 350
+      l3_interface: irb.350
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+    allowed_ribs:
+      - dmz-vr
+# Hypervisors
+  - network_address: 172.18.0
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 172.18.0.10
+    dhcp_end: 172.18.0.254
+    domain_name: lab.local
+    name_servers:
+      - 1.1.1.1
+    gateway: 172.18.0.1
+    last_ip: 172.18.0.254
+    lease_time: 3600
+    name: hypervisors
+    vlan:
+      tag: hypervisors
+      id: 300
+      l3_interface: irb.300
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+# Provisioning
+  - network_address: 172.16.0
+    mask: 24
+    domain_name: lab.local
+    name_servers:
+      - 1.1.1.1
+    gateway: 172.16.0.1
+    last_ip: 172.16.0.254
+    lease_time: 3600
+    name: provisioning
+    vlan:
+      tag: provisioning
+      id: 316
+      l3_interface: irb.316
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr
+# Out of Band Management
+  - network_address: 10.0.1
+    mask: 24
+    dhcp_enabled: true
+    dhcp_start: 10.0.1.10
+    dhcp_end: 10.0.1.254
+    domain_name: lab.local
+    name_servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    gateway: 10.0.1.1
+    last_ip: 10.0.1.254
+    lease_time: 3600
+    name: oobm
+    vlan:
+      tag: oobm
+      id: 500
+      l3_interface: irb.500
+    security_zones:
+      - lan-trusted
+    virtual_router: lan-vr

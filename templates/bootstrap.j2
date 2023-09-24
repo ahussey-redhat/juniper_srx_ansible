@@ -1,0 +1,4 @@
+{% if inventory_hostname in groups['srx'] %}
+delete
+{% endif %}
+set system root-authentication encrypted-password {{ junos_password | password_hash('md5') }}

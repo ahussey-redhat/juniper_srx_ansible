@@ -1,0 +1,11 @@
+---
+all:
+  children:
+    srx:
+      hosts:
+        hussfw01_0:
+        hussfw01_1:
+    qfx:
+      hosts:
+        husssw01_0:
+        husssw01_1:

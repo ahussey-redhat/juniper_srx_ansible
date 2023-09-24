@@ -1,0 +1,325 @@
+{# configure global settings #}
+delete
+set system root-authentication encrypted-password {{ junos_password | password_hash('md5', 'juniper') }}
+set system host-name {{ host_name }}
+set system domain-name {{ domain_name }}
+set system time-zone Australia/Sydney
+{% for name_server in system_name_servers %}
+set system name-server {{ name_server }}
+{% endfor %}
+set system ntp server 203.57.51.100 prefer routing-instance lan-vr
+set system license autoupdate url https://ae1.juniper.net/junos/key_retrieval
+set system services dns forwarders 8.8.8.8
+set system services dns forwarders 8.8.4.4
+
+{# configure services #}
+set system services web-management http interface {{ webinterface }}
+set system services web-management https interface {{ webinterface }}
+set system services web-management https system-generated-certificate
+
+{# configure redundant ethernet #}
+set chassis cluster reth-count 4
+{# LAN reth #}
+set chassis cluster redundancy-group 1 node 0 priority 1
+set chassis cluster redundancy-group 1 node 1 priority 1
+set chassis cluster redundancy-group 1 gratuitous-arp-count 4
+set interfaces reth0 redundant-ether-options redundancy-group 1
+set interfaces reth0 redundant-ether-options lacp active
+set interfaces reth0 redundant-ether-options lacp periodic slow
+set interfaces reth0 flexible-vlan-tagging
+set interfaces reth0 native-vlan-id 1
+set interfaces reth0 promiscuous-mode
+
+{# WAN reth #}
+{# Primary WAN #}
+set chassis cluster redundancy-group 2 node 0 priority 1
+set chassis cluster redundancy-group 2 node 1 priority 1
+set chassis cluster redundancy-group 2 gratuitous-arp-count 4
+set interfaces reth1 redundant-ether-options redundancy-group 2
+{# Alternate WAN #}
+set chassis cluster redundancy-group 3 node 0 priority 1
+set chassis cluster redundancy-group 3 node 1 priority 1
+set chassis cluster redundancy-group 3 gratuitous-arp-count 4
+set interfaces reth2 redundant-ether-options redundancy-group 3
+
+{% for interface in fabric_interfaces %}
+set interfaces fab{{ interface.fab_number}} fabric-options member-interfaces {{ interface.interface }}
+{% endfor %}
+
+{% for interface in switch_fabric_interfaces %}
+set interfaces swfab{{ interface.fab_number}} fabric-options member-interfaces {{ interface.interface }}
+{% endfor %}
+
+set protocols l2-learning global-mode transparent-bridge
+set protocols l2-learning global-mac-table-aging-time 120
+set protocols lldp interface all
+set protocols lldp-med interface all
+set protocols rstp interface all
+
+{# configure physical interfaces #}
+{% for interface in physical_interfaces %}
+{# configure redundant ethernet #}
+set interfaces {{ interface.if }} gigether-options redundant-parent reth0
+{% endfor %}
+
+{# configure LAN security zone #}
+{% for zone in security_zones %}
+{% for protocol in zone.allowed_protocols %}
+set security zones security-zone {{ zone.name }} host-inbound-traffic system-services {{ protocol }}
+set security zones security-zone {{ zone.name }} host-inbound-traffic protocols {{ protocol }}
+{% endfor %}
+set security policies global policy {{ zone.name }}-to-{{ zone.name }} match from-zone {{ zone.name }} to-zone {{ zone.name }} source-address any
+set security policies global policy {{ zone.name }}-to-{{ zone.name }} match from-zone {{ zone.name }} to-zone {{ zone.name }} destination-address any
+set security policies global policy {{ zone.name }}-to-{{ zone.name }} match from-zone {{ zone.name }} to-zone {{ zone.name }} application any
+set security policies global policy {{ zone.name }}-to-{{ zone.name }} then permit
+{% if zone.permitted_zones is defined %}
+{% for permitted_zone in zone.permitted_zones %}
+{# allow to the permitted zone #}
+set security policies global policy {{ zone.name }}-to-{{ permitted_zone.name }} match from-zone {{ zone.name }} to-zone {{ permitted_zone.name }} source-address any
+set security policies global policy {{ zone.name }}-to-{{ permitted_zone.name }} match from-zone {{ zone.name }} to-zone {{ permitted_zone.name }} destination-address any
+set security policies global policy {{ zone.name }}-to-{{ permitted_zone.name }} match from-zone {{ zone.name }} to-zone {{ permitted_zone.name }} application any
+set security policies global policy {{ zone.name }}-to-{{ permitted_zone.name }} then permit
+
+{# allow from the permitted zone #}
+set security policies global policy {{ permitted_zone.name }}-to-{{ zone.name }} match from-zone {{ permitted_zone.name }} to-zone {{ zone.name }} source-address any
+set security policies global policy {{ permitted_zone.name }}-to-{{ zone.name }} match from-zone {{ permitted_zone.name }} to-zone {{ zone.name }} destination-address any
+set security policies global policy {{ permitted_zone.name }}-to-{{ zone.name }} match from-zone {{ permitted_zone.name }} to-zone {{ zone.name }} application any
+set security policies global policy {{ permitted_zone.name }}-to-{{ zone.name }} then permit
+{% endfor %}
+{% endif %}
+
+{# LAN to WAN security policies #}
+{% for wan_security_zone in wan_security_zones %}
+set security policies global policy {{ zone.name }}-to-{{ wan_security_zone.name }} match from-zone {{ zone.name }} to-zone {{ wan_security_zone.name }} source-address any
+set security policies global policy {{ zone.name }}-to-{{ wan_security_zone.name }} match from-zone {{ zone.name }} to-zone {{ wan_security_zone.name }} destination-address any
+set security policies global policy {{ zone.name }}-to-{{ wan_security_zone.name }} match from-zone {{ zone.name }} to-zone {{ wan_security_zone.name }} application any
+set security policies global policy {{ zone.name }}-to-{{ wan_security_zone.name }} then permit
+{% endfor %}
+
+{% for subnet in subnets %}
+set system services dns dns-proxy interface reth0.{{ subnet.vlan.id }}
+{% if zone.name in subnet.security_zones %}
+set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan.id }}
+set interfaces reth0 unit {{ subnet.vlan.id }} family inet address {{ subnet.gateway }}/{{ subnet.mask }}
+set interfaces reth0 unit {{ subnet.vlan.id }} vlan-id {{ subnet.vlan.id }}
+set interfaces reth0 unit {{ subnet.vlan.id }} description {{ subnet.vlan.tag }}
+{% for protocol in zone.allowed_protocols %}
+set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan.id }} host-inbound-traffic system-services {{ protocol }}
+set security zones security-zone {{ zone.name }} interfaces reth0.{{ subnet.vlan.id }} host-inbound-traffic protocols {{ protocol }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+
+{# temporary static zones #}
+set security zones security-zone primary-isp-untrusted host-inbound-traffic system-services all
+set security zones security-zone primary-isp-untrusted host-inbound-traffic protocols all
+set security zones security-zone primary-isp-untrusted interfaces reth1 host-inbound-traffic system-services all
+set security zones security-zone primary-isp-untrusted interfaces reth1 host-inbound-traffic protocols all
+
+set security zones security-zone alternate-isp-untrusted host-inbound-traffic system-services all
+set security zones security-zone alternate-isp-untrusted host-inbound-traffic protocols all
+set security zones security-zone alternate-isp-untrusted interfaces reth2 host-inbound-traffic system-services all
+set security zones security-zone alternate-isp-untrusted interfaces reth2 host-inbound-traffic protocols all
+
+set security policies global policy primary-isp-untrusted-to-lan-trusted match from-zone primary-isp-untrusted to-zone lan-trusted source-address any
+set security policies global policy primary-isp-untrusted-to-lan-trusted match from-zone primary-isp-untrusted to-zone lan-trusted destination-address any
+set security policies global policy primary-isp-untrusted-to-lan-trusted match from-zone primary-isp-untrusted to-zone lan-trusted application any
+set security policies global policy primary-isp-untrusted-to-lan-trusted then permit
+
+set security policies global policy alternate-isp-untrusted-to-lan-trusted match from-zone alternate-isp-untrusted to-zone lan-trusted source-address any
+set security policies global policy alternate-isp-untrusted-to-lan-trusted match from-zone alternate-isp-untrusted to-zone lan-trusted destination-address any
+set security policies global policy alternate-isp-untrusted-to-lan-trusted match from-zone alternate-isp-untrusted to-zone lan-trusted application any
+set security policies global policy alternate-isp-untrusted-to-lan-trusted then permit
+
+set security policies global policy dmz-untrusted-to-lan-trusted match from-zone dmz-untrusted to-zone lan-trusted source-address any
+set security policies global policy dmz-untrusted-to-lan-trusted match from-zone dmz-untrusted to-zone lan-trusted destination-address any
+set security policies global policy dmz-untrusted-to-lan-trusted match from-zone dmz-untrusted to-zone lan-trusted application any
+set security policies global policy dmz-untrusted-to-lan-trusted then permit
+
+set security policies global policy lan-trusted-to-dmz-untrusted match from-zone lan-trusted to-zone dmz-untrusted source-address any
+set security policies global policy lan-trusted-to-dmz-untrusted match from-zone lan-trusted to-zone dmz-untrusted destination-address any
+set security policies global policy lan-trusted-to-dmz-untrusted match from-zone lan-trusted to-zone dmz-untrusted application any
+set security policies global policy lan-trusted-to-dmz-untrusted then permit
+
+{# configure virtual-routers for each subnet #}
+{% for subnet in subnets %}
+{% for router in virtual_routers %}
+{% if router.name in subnet.virtual_router %}
+
+{% if subnet.dhcp_enabled is defined %}
+{# configure DHCP for each subnet #}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet network {{ subnet.gateway }}/{{ subnet.mask }}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope low {{ subnet.dhcp_start }}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet range {{ subnet.name }}-scope high {{ subnet.dhcp_end }}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes domain-name {{ subnet.domain_name }}
+{% for name_server in subnet.name_servers %}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes name-server {{ name_server }}
+{% endfor %}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes router {{ subnet.gateway }}
+set routing-instances {{ router.name }} access address-assignment pool {{ subnet.name }} family inet dhcp-attributes maximum-lease-time {{ subnet.lease_time }}
+{% endif %}
+
+{# configure VLANs for each subnet #}
+set routing-instances {{ router.name }} instance-type virtual-router
+set routing-instances {{ router.name }} interface reth0.{{ subnet.vlan.id }}
+set routing-instances {{ router.name }} routing-options instance-import isp
+
+{# control route leaking between virtual-routing instances #}
+{% set count = namespace(value=0) %}
+set routing-options rib-groups {{ router.name }} import-rib {{ router.name }}.inet.0
+{% if router.allowed_ribs is defined %}
+{% for rib in router.allowed_ribs %}
+set policy-options policy-statement allowed-to-{{ router.name }} term t{{count.value}} from instance {{ rib }}
+set policy-options policy-statement allowed-to-{{ router.name }} term t{{count.value}} then accept
+set routing-options rib-groups {{ router.name }} import-rib {{ rib }}.inet.0
+set routing-instances {{ router.name }} routing-options instance-import allowed-to-{{ router.name }}
+{% set count.value = count.value +1 %}
+{% endfor %}
+{% endif %}
+
+{# configure DHCP reservations #}
+{% for pool in dhcp_reservations %}
+{% for host in pool.hosts %}
+{% if pool.name == subnet.name %}
+set routing-instances {{ router.name }} access address-assignment pool {{ pool.name }} family inet host {{ host.name }} hardware-address {{ host.mac | upper }} ip-address {{ host.ip }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+set routing-instances {{ router.name }} system services dhcp-local-server group dhcp-{{ subnet.vlan.tag }} interface reth0.{{ subnet.vlan.id }}
+set policy-options policy-statement to-{{ router.name }} term t0 from instance {{ router.name }}
+set policy-options policy-statement to-{{ router.name }} term t0 then accept
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{# configure WAN #}
+{# this count is used to keep track of term instances #}
+{% set count = namespace(value=1) %}
+set policy-options policy-statement isp term t0 from preference 1
+set policy-options policy-statement isp term t0 then reject
+{% if dhcp_wan1 is defined %}
+set interfaces reth1 unit 0 family inet address {{ dhcp1_address }}
+set interfaces reth1 description primary-isp
+
+set routing-instances primary-vr instance-type virtual-router
+set routing-instances primary-vr interface reth1
+set routing-instances primary-vr routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh }}
+{#set routing-instances primary-vr routing-options instance-import to-lan-trusted#}
+
+set policy-options policy-statement isp term t{{ count.value }} from instance primary-vr
+set policy-options policy-statement isp term t{{ count.value }} then preference 10
+set policy-options policy-statement isp term t{{ count.value }} then accept
+
+{% for wan_interface in dhcp_wan1 %}
+set interfaces {{ wan_interface }} gigether-options redundant-parent reth1
+{% set count.value = count.value +1 %}
+{% endfor %}
+{% endif %}
+
+{% if dhcp_wan2 is defined %}
+set interfaces reth2 unit 0 family inet address {{ dhcp2_address }}
+set interfaces reth2 description alternate-isp
+
+set routing-instances alternate-vr instance-type virtual-router
+set routing-instances alternate-vr interface reth2
+set routing-instances alternate-vr routing-options static route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh }}
+{#set routing-instances alternate-vr routing-options instance-import to-lan-trusted#}
+
+set policy-options policy-statement isp term t{{ count.value }} from instance alternate-vr
+set policy-options policy-statement isp term t{{ count.value }} then preference 20
+set policy-options policy-statement isp term t{{ count.value }} then accept
+
+{% for wan_interface in dhcp_wan2 %}
+set interfaces {{ wan_interface }} gigether-options redundant-parent reth2
+{% set count.value = count.value +1 %}
+{% endfor %}
+{% endif %}
+
+{% if pppoe_interface is defined %}
+set interfaces {{ pppoe_interface }} unit 0
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap access-profile ppp-profile
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap local-password {{ pppoe_password | password_hash('md5') }}
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap local-name {{ pppoe_username }}
+set interfaces {{ pppoe_interface }} unit 0 ppp-options pap passive
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options underlying-interface {{ pppoe_physical_interface }}
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options auto-reconnect 10
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options client
+set interfaces {{ pppoe_interface }} unit 0 pppoe-options idle-timeout 0
+set interfaces {{ pppoe_interface }} unit 0 family inet negotiate-address
+set interfaces {{ pppoe_interface }} unit 0 family inet mtu 1492
+{% endif %}
+
+{# Configure WAN failover #}
+{% if dhcp_wan2 is defined %}
+set routing-options rib-groups to-primary-vr import-rib primary-vr.inet.0
+set routing-options rib-groups to-alternate-vr import-rib alternate-vr.inet.0
+{% for router in virtual_routers %}
+
+{# leak routes to ISP VRs #}
+set routing-options rib-groups to-{{ router.name }} import-rib {{ router.name }}.inet.0
+set routing-options rib-groups to-{{ router.name }} import-rib primary-vr.inet.0
+set routing-options rib-groups to-{{ router.name }} import-rib alternate-vr.inet.0
+
+{# leak routes to non-ISP VRs #}
+set routing-options rib-groups to-primary-vr import-rib {{router.name }}.inet.0
+set routing-options rib-groups to-alternate-vr import-rib {{router.name }}.inet.0
+{% endfor %}
+
+{% set count = namespace(value=1) %}
+{% for zone in security_zones %}
+{# Configure source NAT for WAN #}
+set security nat source rule-set to-primary-isp-from-zone-{{ zone.name }} from zone {{ zone.name }}
+set security nat source rule-set to-primary-isp-from-zone-{{ zone.name }} to zone primary-isp-untrusted
+set security nat source rule-set to-primary-isp-from-zone-{{ zone.name }} rule p{{ count.value}} match source-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp-from-zone-{{ zone.name }} rule p{{ count.value}} match destination-address 0.0.0.0/0
+set security nat source rule-set to-primary-isp-from-zone-{{ zone.name }} rule p{{ count.value}} then source-nat interface
+
+set security nat source rule-set to-alternate-isp-from-zone-{{ zone.name }} from zone {{ zone.name }}
+set security nat source rule-set to-alternate-isp-from-zone-{{ zone.name }} to zone alternate-isp-untrusted
+set security nat source rule-set to-alternate-isp-from-zone-{{ zone.name }} rule a{{ count.value}} match source-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp-from-zone-{{ zone.name }} rule a{{ count.value}} match destination-address 0.0.0.0/0
+set security nat source rule-set to-alternate-isp-from-zone-{{ zone.name }} rule a{{ count.value}} then source-nat interface
+{% set count.value = count.value +1 %}
+{% endfor %}
+
+{# Configure route monitoring for primary WAN #}
+set services rpm probe wan-probe-primary test google probe-type icmp-ping
+set services rpm probe wan-probe-primary test google target address 8.8.8.8
+set services rpm probe wan-probe-primary test google probe-count 5
+set services rpm probe wan-probe-primary test google probe-interval 1
+set services rpm probe wan-probe-primary test google test-interval 30
+set services rpm probe wan-probe-primary test google thresholds successive-loss 5
+set services rpm probe wan-probe-primary test google thresholds total-loss 5
+set services rpm probe wan-probe-primary test google next-hop {{ dhcp_wan1_nh }}
+set services rpm probe wan-probe-primary test google destination-interface reth1
+
+{# Configure route monitoring for alternate WAN #}
+set services rpm probe wan-probe-alternate test google probe-type icmp-ping
+set services rpm probe wan-probe-alternate test google target address 8.8.8.8
+set services rpm probe wan-probe-alternate test google probe-count 5
+set services rpm probe wan-probe-alternate test google probe-interval 1
+set services rpm probe wan-probe-alternate test google test-interval 30
+set services rpm probe wan-probe-alternate test google thresholds successive-loss 5
+set services rpm probe wan-probe-alternate test google thresholds total-loss 5
+set services rpm probe wan-probe-alternate test google next-hop {{ dhcp_wan2_nh }}
+set services rpm probe wan-probe-alternate test google destination-interface reth2
+
+{# Configure source NAT for alternate WAN #}
+
+
+set services ip-monitoring policy wan-policy-primary match rpm-probe wan-probe-primary
+set services ip-monitoring policy wan-policy-primary then preferred-route routing-instances primary-vr route 0.0.0.0/0 next-hop {{ dhcp_wan1_nh}}
+
+set services ip-monitoring policy wan-policy-alternate match rpm-probe wan-probe-alternate
+set services ip-monitoring policy wan-policy-alternate then preferred-route routing-instances alternate-vr route 0.0.0.0/0 next-hop {{ dhcp_wan2_nh}}
+{% endif %}
+
+
+{# Configure logging #}
+set security log mode stream
+set security log format syslog
+set security log report
+
+set security policies pre-id-default-policy then log session-close
