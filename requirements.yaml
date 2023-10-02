@@ -1,4 +1,5 @@
 collections:
   - name: juniper.device
+  - name: community.general
 roles:
   - name: juniper.junos

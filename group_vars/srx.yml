@@ -94,9 +94,6 @@ dhcp_reservations:
         name: unifi
   - name: hypervisors
     hosts:
-      - ip: 172.18.0.8
-        mac: 00:16:3e:2d:ac:05
-        name: rhvm
       - ip: 172.18.0.10
         mac: 44:1e:a1:4e:8e:2c
         name: node1
