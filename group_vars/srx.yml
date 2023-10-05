@@ -104,11 +104,8 @@ dhcp_reservations:
         mac: e4:11:5b:d6:68:f8
         name: node3
       - ip: 172.18.0.13
-        mac: 40:16:7e:35:c4:66
-        name: node4
-      - ip: 172.18.0.5
-        mac: 00:16:3e:75:05:5c
-        name: misc
+        mac: 52:54:00:a6:27:bd
+        name: bootstrap
   - name: clients
     hosts:
       - ip: 192.168.103.254
