@@ -3,3 +3,4 @@ configs/candidate/*
 configs/backups/*
 !configs/backups/README.md
 group_vars/all/secrets.yml
+ocp_node_conf.yml

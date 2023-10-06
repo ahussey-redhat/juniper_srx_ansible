@@ -58,8 +58,8 @@ set interfaces {{ interface.name }} gratuitous-arp-reply
 set protocols rstp interface {{ interface.name }}
 {% endif %}
 {% if 'ae' in interface.name %}
-set interfaces {{ interface.name }} aggregated-ether-options lacp active
-set interfaces {{ interface.name }} aggregated-ether-options lacp periodic slow
+set interfaces {{ interface.name }} aggregated-ether-options lacp {{ interface.lacp_mode | default('active') }}
+set interfaces {{ interface.name }} aggregated-ether-options lacp periodic {{ interface.lacp_mon | default('slow') }}
 {% for member in interface.members %}
 set interfaces {{ member }} ether-options 802.3ad {{ interface.name }}
 {% endfor %}

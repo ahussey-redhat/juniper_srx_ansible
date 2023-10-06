@@ -31,13 +31,9 @@ lan_interfaces:
     vlan_mode: trunk
 # Hypervisors
   # node1
-  - name: ge-0/0/6
-    vlans:
-      - 316
-    virtual_router: lan-trusted
-    vlan_mode: trunk
-    native_vlan_id: 316
   - name: ae3
+    lacp_mon: fast
+    lacp_mode: passive
     vlans:
       - 100
       - 102
@@ -47,18 +43,15 @@ lan_interfaces:
     virtual_router: lan-trusted
     native_vlan_id: 300
     members:
+      - ge-0/0/6
       - ge-0/0/7
       - ge-0/0/8
       - ge-0/0/9
     vlan_mode: trunk
   # node2
-  - name: ge-0/0/10
-    vlans:
-      - 316
-    virtual_router: lan-trusted
-    vlan_mode: trunk
-    native_vlan_id: 316
   - name: ae4
+    lacp_mon: fast
+    lacp_mode: passive
     vlans:
       - 100
       - 102
@@ -68,18 +61,15 @@ lan_interfaces:
     virtual_router: lan-trusted
     native_vlan_id: 300
     members:
+      - ge-0/0/10
       - ge-0/0/11
       - ge-0/0/12
       - ge-0/0/13
     vlan_mode: trunk
   # node3
-  - name: ge-0/0/14
-    vlans:
-      - 316
-    virtual_router: lan-trusted
-    vlan_mode: trunk
-    native_vlan_id: 316
   - name: ae5
+    lacp_mon: fast
+    lacp_mode: passive
     vlans:
       - 100
       - 102
@@ -89,6 +79,7 @@ lan_interfaces:
     virtual_router: lan-trusted
     native_vlan_id: 300
     members:
+      - ge-0/0/14
       - ge-0/0/15
       - ge-0/0/16
       - ge-0/0/17

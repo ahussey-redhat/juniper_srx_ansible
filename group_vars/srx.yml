@@ -103,7 +103,7 @@ dhcp_reservations:
       - ip: 172.18.0.12
         mac: e4:11:5b:d6:68:f8
         name: node3
-      - ip: 172.18.0.13
+      - ip: 172.18.0.31
         mac: 52:54:00:a6:27:bd
         name: bootstrap
   - name: clients
