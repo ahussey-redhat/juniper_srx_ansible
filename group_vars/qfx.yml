@@ -126,6 +126,7 @@ lan_interfaces:
     native_vlan_id: 300
     vlans:
       - 100
+      - 102
       - 300
       - 316
     virtual_router: lan-trusted
