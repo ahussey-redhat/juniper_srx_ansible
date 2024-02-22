@@ -33,7 +33,7 @@ lan_interfaces:
   # node1
   - name: ae3
     lacp_mon: fast
-    lacp_mode: passive
+    lacp_mode: active
     vlans:
       - 100
       - 102
@@ -51,7 +51,7 @@ lan_interfaces:
   # node2
   - name: ae4
     lacp_mon: fast
-    lacp_mode: passive
+    lacp_mode: active
     vlans:
       - 100
       - 102
@@ -69,7 +69,7 @@ lan_interfaces:
   # node3
   - name: ae5
     lacp_mon: fast
-    lacp_mode: passive
+    lacp_mode: active
     vlans:
       - 100
       - 102
