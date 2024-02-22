@@ -9,3 +9,7 @@ all:
       hosts:
         husssw01_0:
         husssw01_1:
+    network_devices:
+      children:
+        qfx:
+        srx:
