@@ -148,8 +148,8 @@ lan_interfaces:
     native_vlan_id: 1
     vlan_mode: trunk
     members:
-      - ge-0/0/26
-      - ge-0/0/27
+      - xe-0/0/26
+      - xe-0/0/27
 # Dell XR4000 Sled2
   - name: ae10
     vlans:
@@ -160,7 +160,7 @@ lan_interfaces:
     native_vlan_id: 1
     vlan_mode: trunk
     members:
-      - ge-0/0/30
-      - ge-0/0/31
+      - xe-0/0/30
+      - xe-0/0/31
 
 
