@@ -138,5 +138,29 @@ lan_interfaces:
     members:
       - ge-0/0/38
       - ge-0/0/39
+# Dell XR4000 Sled1
+  - name: ae9
+    vlans:
+      - 1
+      - 102
+    virtual_router: lan-trusted
+    rstp: true
+    native_vlan_id: 1
+    vlan_mode: trunk
+    members:
+      - ge-0/0/26
+      - ge-0/0/27
+# Dell XR4000 Sled2
+  - name: ae10
+    vlans:
+      - 1
+      - 102
+    virtual_router: lan-trusted
+    rstp: true
+    native_vlan_id: 1
+    vlan_mode: trunk
+    members:
+      - ge-0/0/30
+      - ge-0/0/31
 
 
