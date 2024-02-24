@@ -319,7 +319,10 @@ set services ip-monitoring policy wan-policy-alternate then preferred-route rout
 
 {# Configure logging #}
 set security log mode stream
-set security log format syslog
 set security log report
-
+set security log format syslog
+set security application-tracking first-update
+set security policies pre-id-default-policy then log session-init
 set security policies pre-id-default-policy then log session-close
+set security zones security-zone primary-isp-untrusted application-tracking
+set security zones security-zone alternate-isp-untrusted application-tracking

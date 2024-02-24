@@ -147,4 +147,23 @@ dhcp_reservations:
       - ip: 10.10.255.250
         mac: 56:6f:b7:44:00:07
         name: messaging
-
+  - name: misc
+    hosts:
+      - ip: 192.168.1.252
+        mac: 52:54:00:00:fa:01
+        name: bootstrap
+      - ip: 192.168.1.254
+        mac: b4:45:06:f1:0d:d1
+        name: sno
+      - ip: 192.168.1.253
+        mac: b4:45:06:f1:11:37
+        name: worker
+      - ip: 192.168.1.27
+        mac: b4:45:06:f1:11:31
+        name: sled2-idrac
+      - ip: 192.168.1.28
+        mac: b4:45:06:f1:0d:cb
+        name: sled1-idrac
+      - ip: 192.168.1.31
+        mac: b4:45:06:f2:a4:91
+        name: witness-node

@@ -15,8 +15,7 @@ subnets:
     dhcp_end: 192.168.1.254
     domain_name: lab.local
     name_servers:
-      - 8.8.8.8
-      - 8.8.4.4
+      - 172.18.0.20
     gateway: 192.168.1.1
     last_ip: 192.168.1.254
     lease_time: 3600
